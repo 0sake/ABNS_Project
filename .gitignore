@@ -1,0 +1,9 @@
+checkpoints/
+data/
+results/
+figures/
+__pycache__/
+*.pyc
+*.bin
+*.pth
+*.pt
