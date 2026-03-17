@@ -12,7 +12,7 @@ FIGURES_DIR   = ROOT / "figures"
 CKPT_DIR      = ROOT / "checkpoints"
 
 # Expected model checkpoint filename (place your .pth file here)
-MODEL_CKPT    = CKPT_DIR / "resnet50_cifar10.pth"
+MODEL_CKPT    = CKPT_DIR / "pytorch_model.bin"
 
 # Phase 1 outputs
 CALIB_INDICES = RESULTS_DIR / "calib_indices.pt"
@@ -56,7 +56,7 @@ TARGET_BLOCKS = [
 ]
 
 # Transition blocks that contain a residual downsampling branch
-DOWNSAMPLING_BLOCKS = {"layer2.0", "layer3.0", "layer4.0"}
+DOWNSAMPLING_BLOCKS = {"layer1.0", "layer2.0", "layer3.0", "layer4.0"}
 
 # ── CKA ──────────────────────────────────────────────────────────────────────
 CKA_EPSILON = 1e-8               # denominator guard against collapse
