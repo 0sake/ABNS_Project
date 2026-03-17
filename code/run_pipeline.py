@@ -130,6 +130,8 @@ def main() -> None:
             calib_indices_path=CALIB_INDICES,
             env=env,
         )
+        from bi_rep_extended import run_extended_birep
+        run_extended_birep(model, registry, calib_loader, device, F_intact)
     else:
         if not PHASE2_RESULTS.exists():
             raise FileNotFoundError(
