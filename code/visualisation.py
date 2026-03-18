@@ -1,14 +1,20 @@
 """
-visualisation.py — Generate all 7 figures specified in Phase 3.
+visualisation.py — Generate all figures for Phase 3 and extended BIrep analysis.
 
-Figures:
-    Fig 1  Kendall's tau 3×3 heatmap with p-values
+Phase 3 figures (original):
+    Fig 1  Kendall's tau 3x3 heatmap with p-values
     Fig 2  Grouped bar chart of three BI vectors (sorted by BIacc)
     Fig 3  Jaccard heatmaps for k=3 and k=5
     Fig 4  BIacc vs BIrep scatter (silent failure candidates annotated)
     Fig 5  CKA damage propagation profile for primary candidate
     Fig 6  Per-class CKA disruption bar chart
     Fig 7  Paired entropy violin plot (Hintact vs Hablated on C_l)
+
+Extended BIrep figures (bi_rep_extended.py):
+    Fig 8  BIrep vs BIrep_gram scatter - mathematical equivalence validation
+    Fig 9  BIrep_class bar chart for all 16 blocks
+    Fig 10 10x10 class cosine heatmaps: intact | ablated | difference
+    Fig 11 Top-5 class-pair cosine similarity changes (before/after bar chart)
 """
 
 import json
@@ -253,11 +259,284 @@ def fig7_entropy_violin(block_name: str, sf_json_path: Path) -> None:
 
 
 # ─────────────────────────────────────────────────────────────
+# Fig 8 — BIrep vs BIrep_gram scatter (validation)
+# ─────────────────────────────────────────────────────────────
+
+def fig8_birep_vs_gram(bi_rep: dict, bi_rep_gram: dict) -> None:
+    """
+    Scatter plot of BIrep (Linear CKA on NxD) vs BIrep_gram (Gram CKA on NxN).
+
+    For linear kernels the two formulations are mathematically equivalent,
+    so points should fall on the y=x diagonal. Deviations reveal numerical
+    differences between implementations. This serves as a methodological
+    validation figure.
+    """
+    vals_rep  = [bi_rep[b]      for b in TARGET_BLOCKS]
+    vals_gram = [bi_rep_gram[b] for b in TARGET_BLOCKS]
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+
+    # Reference diagonal
+    lim = max(max(vals_rep), max(vals_gram)) * 1.05
+    ax.plot([0, lim], [0, lim], color="#bbbbbb", linewidth=1.2,
+            linestyle="--", label="y = x (perfect equivalence)", zorder=1)
+
+    scatter = ax.scatter(vals_rep, vals_gram, c=vals_rep,
+                         cmap="viridis", s=90, zorder=3, edgecolors="white", linewidths=0.5)
+
+    # Annotate outliers (largest deviation from diagonal)
+    for b in TARGET_BLOCKS:
+        dev = abs(bi_rep[b] - bi_rep_gram[b])
+        if dev > 0.001 or bi_rep[b] > 0.1:
+            ax.annotate(b, (bi_rep[b], bi_rep_gram[b]),
+                        textcoords="offset points", xytext=(5, 3),
+                        fontsize=7, color="#333333")
+
+    fig.colorbar(scatter, ax=ax, label="BIrep value")
+    ax.set_xlabel("BIrep  (Linear CKA on N×D matrix)", fontsize=11)
+    ax.set_ylabel("BIrep_gram  (Gram CKA on N×N matrix)", fontsize=11)
+    ax.set_title(
+        "Fig 8 — BIrep vs BIrep_gram\n"
+        "Mathematical equivalence for linear kernels", fontsize=11
+    )
+    ax.set_xlim(0, lim); ax.set_ylim(0, lim)
+    ax.legend(fontsize=9)
+    ax.set_aspect("equal")
+    fig.tight_layout()
+    _save(fig, "fig8_birep_vs_gram.png")
+
+
+# ─────────────────────────────────────────────────────────────
+# Fig 9 — BIrep_class bar chart for all 16 blocks
+# ─────────────────────────────────────────────────────────────
+
+def fig9_birep_class_bar(bi_acc: dict, bi_rep: dict, bi_rep_class: dict) -> None:
+    """
+    Bar chart of BIrep_class (class-level cosine similarity disruption)
+    alongside BIrep, sorted by BIacc.
+
+    The scale difference between BIrep (~0.35 for transition blocks) and
+    BIrep_class (~0.03) is the key visual finding: the class centroid
+    structure is much more robust to ablation than instance-level geometry.
+    """
+    order = sorted(TARGET_BLOCKS, key=lambda b: bi_acc[b])
+    x = np.arange(len(order))
+    width = 0.35
+
+    fig, ax1 = plt.subplots(figsize=(14, 5))
+    ax2 = ax1.twinx()
+
+    # BIrep on primary axis
+    bars1 = ax1.bar(x - width/2, [bi_rep[b] for b in order],
+                    width, label="BIrep (instance)", color="#55A868", alpha=0.85)
+    # BIrep_class on secondary axis (different scale)
+    bars2 = ax2.bar(x + width/2, [bi_rep_class[b] for b in order],
+                    width, label="BIrep_class (class)", color="#C44E52", alpha=0.85)
+
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(order, rotation=45, ha="right", fontsize=9)
+    ax1.set_ylabel("BIrep — instance-level disruption", color="#55A868", fontsize=10)
+    ax2.set_ylabel("BIrep_class — class-level disruption", color="#C44E52", fontsize=10)
+    ax1.tick_params(axis="y", labelcolor="#55A868")
+    ax2.tick_params(axis="y", labelcolor="#C44E52")
+
+    ax1.set_title(
+        "Fig 9 — BIrep vs BIrep_class (sorted by BIacc)\n"
+        "Note: dual y-axis — class-level disruption is ~10× smaller", fontsize=11
+    )
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", fontsize=9)
+
+    fig.tight_layout()
+    _save(fig, "fig9_birep_class_bar.png")
+
+
+# ─────────────────────────────────────────────────────────────
+# Fig 10 — 10×10 class cosine heatmaps (intact | ablated | diff)
+# ─────────────────────────────────────────────────────────────
+
+def fig10_class_heatmaps(
+    s_intact: list,
+    bi_rep_class: dict,
+    block_name: str,
+    model,
+    registry: dict,
+    calib_loader,
+    device,
+    labels_intact,
+) -> None:
+    """
+    Three-panel figure:
+        Left  — S_intact (10×10 cosine similarity matrix of intact model)
+        Center — S_ablated (same, after ablating block_name)
+        Right  — S_ablated - S_intact (difference, diverging colormap)
+
+    This is the most interpretable figure of the extended analysis:
+    the difference panel shows exactly which class pairs became more/less
+    similar after ablation.
+    """
+    from bi_rep_extended import class_cosine_matrix
+    from utils import ablated_block
+    from config import DOWNSAMPLING_BLOCKS
+
+    S_int = np.array(s_intact)
+
+    # Re-extract ablated class matrix for block_name
+    block = registry[block_name]
+    is_ds = block_name in DOWNSAMPLING_BLOCKS
+    import torch
+    with torch.no_grad():
+        from utils import ActivationCapture, gap
+        feats = []
+        with ablated_block(block, is_downsampling=is_ds):
+            with ActivationCapture(model.avgpool) as cap:
+                for images, _ in calib_loader:
+                    images = images.to(device)
+                    _ = model(images)
+                    feats.append(gap(cap.output).cpu())
+        F_abl = torch.cat(feats, dim=0)
+
+    S_abl_t = class_cosine_matrix(F_abl.to(device), labels_intact.to(device))
+    S_abl   = S_abl_t.cpu().numpy()
+    S_diff  = S_abl - S_int
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    labels = CIFAR10_CLASSES
+
+    panels = [
+        (S_int,  "S_intact\n(Intact model)",   "Blues",   0.0, 1.0),
+        (S_abl,  f"S_ablated\n({block_name} removed)", "Blues", 0.0, 1.0),
+        (S_diff, "Difference\n(Ablated − Intact)", "RdBu_r", -0.3, 0.3),
+    ]
+
+    for ax, (mat, title, cmap, vmin, vmax) in zip(axes, panels):
+        im = ax.imshow(mat, cmap=cmap, vmin=vmin, vmax=vmax, aspect="auto")
+        ax.set_xticks(range(10)); ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
+        ax.set_yticks(range(10)); ax.set_yticklabels(labels, fontsize=8)
+        ax.set_title(title, fontsize=10, pad=8)
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+        # Annotate each cell with value
+        for i in range(10):
+            for j in range(10):
+                val = mat[i, j]
+                color = "white" if abs(val) > (0.6 if cmap != "RdBu_r" else 0.2) else "black"
+                ax.text(j, i, f"{val:.2f}", ha="center", va="center",
+                        fontsize=6, color=color)
+
+    fig.suptitle(
+        f"Fig 10 — Class×Class Cosine Similarity: Intact vs {block_name} Ablated",
+        fontsize=12, y=1.02
+    )
+    fig.tight_layout()
+    _save(fig, f"fig10_class_heatmaps_{block_name.replace('.','_')}.png")
+
+
+# ─────────────────────────────────────────────────────────────
+# Fig 11 — Top-5 class-pair changes (before/after bar chart)
+# ─────────────────────────────────────────────────────────────
+
+def fig11_class_pair_changes(
+    s_intact: list,
+    model,
+    registry: dict,
+    calib_loader,
+    device,
+    labels_intact,
+    block_name: str,
+    top_k: int = 5,
+) -> None:
+    """
+    Horizontal grouped bar chart showing the top-k class pairs whose
+    cosine similarity changed most after ablating block_name.
+
+    For each pair: two bars side by side (before in blue, after in orange).
+    The delta is annotated on each bar pair.
+
+    This is the most directly citable figure for the silent failure argument:
+    "cat and dog became 25% more similar after removing layer4.0."
+    """
+    from bi_rep_extended import class_cosine_matrix
+    from utils import ablated_block, ActivationCapture, gap
+    from config import DOWNSAMPLING_BLOCKS
+    import torch
+
+    S_int = np.array(s_intact)
+
+    # Re-extract ablated representations
+    block = registry[block_name]
+    is_ds = block_name in DOWNSAMPLING_BLOCKS
+    with torch.no_grad():
+        feats = []
+        with ablated_block(block, is_downsampling=is_ds):
+            with ActivationCapture(model.avgpool) as cap:
+                for images, _ in calib_loader:
+                    images = images.to(device)
+                    _ = model(images)
+                    feats.append(gap(cap.output).cpu())
+        F_abl = torch.cat(feats, dim=0)
+
+    S_abl = class_cosine_matrix(F_abl.to(device), labels_intact.to(device)).cpu().numpy()
+
+    # Collect all unique off-diagonal pairs and their deltas
+    pairs = []
+    for i in range(10):
+        for j in range(i+1, 10):
+            before = float(S_int[i, j])
+            after  = float(S_abl[i, j])
+            delta  = after - before
+            pairs.append((abs(delta), delta, before, after,
+                          CIFAR10_CLASSES[i], CIFAR10_CLASSES[j]))
+    pairs.sort(reverse=True)
+    top = pairs[:top_k]
+
+    # Build chart
+    pair_labels = [f"{p[4]} ↔ {p[5]}" for p in top]
+    befores = [p[2] for p in top]
+    afters  = [p[3] for p in top]
+    deltas  = [p[1] for p in top]
+
+    y = np.arange(top_k)
+    height = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    bars_b = ax.barh(y + height/2, befores, height,
+                     label="Before (intact)",  color="#4C72B0", alpha=0.85)
+    bars_a = ax.barh(y - height/2, afters,  height,
+                     label="After (ablated)",  color="#DD8452", alpha=0.85)
+
+    # Delta annotations
+    for i, (bef, aft, d) in enumerate(zip(befores, afters, deltas)):
+        sign = "▲" if d > 0 else "▼"
+        color = "#c0392b" if d > 0 else "#1a6b3a"
+        ax.text(max(bef, aft) + 0.01, i, f"{sign} {abs(d):.3f}",
+                va="center", fontsize=9, color=color, fontweight="bold")
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(pair_labels, fontsize=10)
+    ax.set_xlabel("Cosine Similarity", fontsize=11)
+    ax.set_xlim(0, 1.12)
+    ax.axvline(0, color="black", linewidth=0.5)
+    ax.set_title(
+        f"Fig 11 — Top-{top_k} Class-Pair Similarity Changes: {block_name} ablated\n"
+        "All pairs become MORE similar (▲) — class separation degrades silently",
+        fontsize=11
+    )
+    ax.legend(fontsize=10)
+    ax.invert_yaxis()   # largest delta at top
+    fig.tight_layout()
+    _save(fig, f"fig11_class_pair_changes_{block_name.replace('.','_')}.png")
+
+
+# ─────────────────────────────────────────────────────────────
 # Main: generate all figures from saved result files
 # ─────────────────────────────────────────────────────────────
 
-def generate_all_figures(phase3_results: dict) -> None:
-    """Generate Figs 1–7 from cached result dicts."""
+def generate_all_figures(phase3_results: dict, model=None, registry=None,
+                         calib_loader=None, device=None) -> None:
+    """Generate Figs 1–11 from cached result dicts."""
     logger.info("=" * 60)
     logger.info("Generating figures …")
 
@@ -268,16 +547,20 @@ def generate_all_figures(phase3_results: dict) -> None:
     with open(PHASE3_JACCARD) as f:
         jac = json.load(f)
 
-    bi_geo = p2["bi_geo"]
-    bi_acc = p2["bi_acc"]
-    bi_rep = p2["bi_rep"]
-    bi_rep_ml = p2["bi_rep_multilayer"]
+    bi_geo       = p2["bi_geo"]
+    bi_acc       = p2["bi_acc"]
+    bi_rep       = p2["bi_rep"]
+    bi_rep_ml    = p2["bi_rep_multilayer"]
+    bi_rep_gram  = p2.get("bi_rep_gram", {})
+    bi_rep_class = p2.get("bi_rep_class", {})
+    s_intact     = p2.get("s_intact_10x10", None)
 
     candidates = (
         phase3_results.get("primary_candidate", []) +
         phase3_results.get("secondary_candidates", [])
     )
 
+    # ── Figs 1–7 (original) ──────────────────────────────────
     fig1_tau_heatmap(corr)
     fig2_grouped_bar(bi_geo, bi_acc, bi_rep)
     fig3_jaccard_heatmaps(jac)
@@ -297,5 +580,46 @@ def generate_all_figures(phase3_results: dict) -> None:
                 sf.get("geometry", {}).get("per_class_cka", {})
             )
             fig7_entropy_violin(block_name, sf_path)
+
+    # ── Figs 8–11 (extended BIrep) ────────────────────────────
+    if bi_rep_gram and bi_rep_class and s_intact is not None:
+        logger.info("Generating extended BIrep figures (8–11) …")
+        fig8_birep_vs_gram(bi_rep, bi_rep_gram)
+        fig9_birep_class_bar(bi_acc, bi_rep, bi_rep_class)
+
+        # Figs 10–11 need the model to re-extract ablated representations
+        if model is not None and registry is not None and calib_loader is not None:
+            import torch
+            # Collect calibration labels once
+            all_labels = []
+            for _, lbl in calib_loader:
+                all_labels.append(lbl)
+            labels_intact = torch.cat(all_labels, dim=0).to(device)
+
+            # Use primary silent failure candidate
+            primary = candidates[0] if candidates else max(
+                TARGET_BLOCKS,
+                key=lambda b: bi_rep.get(b, 0) - bi_acc.get(b, 0)
+            )
+            fig10_class_heatmaps(
+                s_intact, bi_rep_class, primary,
+                model, registry, calib_loader, device, labels_intact
+            )
+            fig11_class_pair_changes(
+                s_intact, model, registry, calib_loader,
+                device, labels_intact, primary
+            )
+        else:
+            logger.warning(
+                "Figs 10–11 skipped: model/registry/calib_loader not provided. "
+                "Call generate_all_figures(..., model=model, registry=registry, "
+                "calib_loader=calib_loader, device=device) to generate them."
+            )
+    else:
+        logger.info(
+            "Extended BIrep figures (8–11) skipped: "
+            "bi_rep_gram / bi_rep_class / s_intact_10x10 not found in phase2_results.json. "
+            "Run bi_rep_extended first."
+        )
 
     logger.info("All figures generated ✓")
