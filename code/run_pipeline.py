@@ -130,8 +130,6 @@ def main() -> None:
             calib_indices_path=CALIB_INDICES,
             env=env,
         )
-        from bi_rep_extended import run_extended_birep
-        run_extended_birep(model, registry, calib_loader, device, F_intact)
     else:
         if not PHASE2_RESULTS.exists():
             raise FileNotFoundError(
@@ -153,7 +151,13 @@ def main() -> None:
         )
 
         if not args.skip_figures:
-            generate_all_figures(p3_results)
+            generate_all_figures(
+                p3_results,
+                model=model,
+                registry=registry,
+                calib_loader=calib_loader,
+                device=device,
+            )
     else:
         p3_results = None
 
