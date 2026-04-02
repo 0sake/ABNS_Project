@@ -82,6 +82,7 @@ def load_model(ckpt_path: Path, device: torch.device) -> ResNet50_CIFAR:
             "Place your resnet50_cifar10.pth in checkpoints/ and retry."
         )
 
+    # tensor first loaded in cpu
     raw = torch.load(ckpt_path, map_location="cpu")
 
     # Common checkpoint formats: plain state_dict or wrapped under a key
@@ -98,6 +99,7 @@ def load_model(ckpt_path: Path, device: torch.device) -> ResNet50_CIFAR:
     if unexpected:
         logger.warning(f"Unexpected keys ({len(unexpected)}): {unexpected[:5]} ...")
 
+    # then loaded into torch device
     model = model.to(device)
     model.eval()
     logger.info(f"Model loaded from {ckpt_path.name} → {device}")
