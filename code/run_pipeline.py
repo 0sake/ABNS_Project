@@ -15,6 +15,8 @@ import logging
 import time
 from pathlib import Path
 
+from tracking import init_experiment, log_phase1, log_phase2, log_phase3
+
 import torch
 
 import config as cfg
@@ -95,6 +97,9 @@ def main() -> None:
     model = load_model(MODEL_CKPT, device)
     registry = build_block_registry(model)
 
+    #INIT MLFLOW LOGGIN
+    init_experiment()
+
     # ── Phase 1 ───────────────────────────────────────────────────
     if run_p1:
         logger.info("\n" + "═" * 60)
@@ -117,7 +122,8 @@ def main() -> None:
             f"Loaded cached F_intact {tuple(F_intact.shape)}, "
             f"baseline_acc={baseline_acc:.4f}"
         )
-
+    #MLFLOW LOGGING
+    log_phase1(test_accuracy=baseline_acc, f_intact_path=RESULTS_DIR / "F_intact.npy")
     # ── Phase 2 ───────────────────────────────────────────────────
     if run_p2:
         p2_results = run_phase2(
@@ -137,7 +143,8 @@ def main() -> None:
             )
         logger.info(f"Phase 2 results loaded from {PHASE2_RESULTS}")
         p2_results = None  # Phase 3 reads directly from disk
-
+    #MLFLOW LOGGING
+    log_phase2(p2_results)
     # ── Phase 3 ───────────────────────────────────────────────────
     if run_p3:
         p3_results = run_phase3(
@@ -160,7 +167,8 @@ def main() -> None:
             )
     else:
         p3_results = None
-
+    #MLFLOW LOGGING
+    log_phase3(figure_dir=RESULTS_DIR / "figures")
     elapsed = time.time() - t_total
     logger.info("\n" + "═" * 60)
     logger.info(f"Pipeline complete in {elapsed/60:.1f} min")
