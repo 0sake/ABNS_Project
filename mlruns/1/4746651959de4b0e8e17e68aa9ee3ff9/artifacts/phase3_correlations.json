@@ -1,0 +1,20 @@
+{
+  "bi_geo_vs_bi_acc": {
+    "tau": 0.85,
+    "p_value": 0.0,
+    "significant": true,
+    "interpretation": "strong positive correlation (statistically significant)"
+  },
+  "bi_geo_vs_bi_rep": {
+    "tau": 0.6333,
+    "p_value": 0.000336,
+    "significant": true,
+    "interpretation": "strong positive correlation (statistically significant)"
+  },
+  "bi_acc_vs_bi_rep": {
+    "tau": 0.6833,
+    "p_value": 8.3e-05,
+    "significant": true,
+    "interpretation": "strong positive correlation (statistically significant)"
+  }
+}

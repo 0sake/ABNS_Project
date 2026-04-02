@@ -1,0 +1,45 @@
+{
+  "block": "layer4.0",
+  "bi_acc": 0.0373,
+  "bi_rep": 0.134974,
+  "delta": 0.097674,
+  "geometry": {
+    "propagation_profile": {},
+    "per_class_cka": {
+      "0": 0.569494,
+      "1": 0.578906,
+      "2": 0.471634,
+      "3": 0.487799,
+      "4": 0.538344,
+      "5": 0.539017,
+      "6": 0.544233,
+      "7": 0.480583,
+      "8": 0.581918,
+      "9": 0.485245
+    },
+    "class_cka_variance": 0.0016581015588100008
+  },
+  "confidence": {
+    "block": "layer4.0",
+    "acc_intact": 0.9464,
+    "acc_ablated": 0.9091,
+    "bi_acc": 0.0373,
+    "n_C_l": 8974,
+    "n_E_l": 909,
+    "entropy": {
+      "mean_H_intact": 0.018563,
+      "mean_H_ablated": 0.354334,
+      "mean_delta_H": 0.335772,
+      "median_delta_H": 0.15648,
+      "wilcoxon_stat": 40173806.0,
+      "wilcoxon_p": 0.0,
+      "significant": true
+    },
+    "top1_confidence": {
+      "mean_conf_intact": 0.994091,
+      "mean_conf_ablated": 0.905672,
+      "wilcoxon_p": 0.0,
+      "significant": true
+    }
+  }
+}

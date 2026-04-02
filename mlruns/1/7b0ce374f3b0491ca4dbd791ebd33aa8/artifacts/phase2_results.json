@@ -1,0 +1,82 @@
+{
+  "bi_geo": {
+    "layer1.0": 0.59118,
+    "layer1.1": 0.109834,
+    "layer1.2": 0.052912,
+    "layer2.0": 0.483206,
+    "layer2.1": 0.04162,
+    "layer2.2": 0.028284,
+    "layer2.3": 0.028143,
+    "layer3.0": 0.609367,
+    "layer3.1": 0.033877,
+    "layer3.2": 0.027723,
+    "layer3.3": 0.03345,
+    "layer3.4": 0.035659,
+    "layer3.5": 0.047878,
+    "layer4.0": 0.058426,
+    "layer4.1": 0.019169,
+    "layer4.2": 0.019027
+  },
+  "bi_acc": {
+    "layer1.0": 0.2794,
+    "layer1.1": 0.0956,
+    "layer1.2": 0.0342,
+    "layer2.0": 0.1721,
+    "layer2.1": 0.0128,
+    "layer2.2": 0.0114,
+    "layer2.3": 0.0063,
+    "layer3.0": 0.2619,
+    "layer3.1": 0.01,
+    "layer3.2": 0.0103,
+    "layer3.3": 0.0143,
+    "layer3.4": 0.0186,
+    "layer3.5": 0.0185,
+    "layer4.0": 0.0373,
+    "layer4.1": 0.0047,
+    "layer4.2": 0.006
+  },
+  "bi_rep": {
+    "layer1.0": 0.366225,
+    "layer1.1": 0.136702,
+    "layer1.2": 0.06393,
+    "layer2.0": 0.228477,
+    "layer2.1": 0.017674,
+    "layer2.2": 0.017457,
+    "layer2.3": 0.013234,
+    "layer3.0": 0.313499,
+    "layer3.1": 0.01839,
+    "layer3.2": 0.017437,
+    "layer3.3": 0.022986,
+    "layer3.4": 0.033633,
+    "layer3.5": 0.042768,
+    "layer4.0": 0.134974,
+    "layer4.1": 0.040104,
+    "layer4.2": 0.04725
+  },
+  "bi_rep_multilayer": {
+    "layer1.0": {
+      "layer1": 0.931355,
+      "layer2": 0.865627,
+      "layer3": 0.705058,
+      "layer4": 0.633775,
+      "avgpool": 0.633775
+    },
+    "layer3.0": {
+      "layer1": 1.0,
+      "layer2": 1.0,
+      "layer3": 0.757089,
+      "layer4": 0.686501,
+      "avgpool": 0.686501
+    },
+    "layer2.0": {
+      "layer1": 1.0,
+      "layer2": 0.891935,
+      "layer3": 0.781316,
+      "layer4": 0.771523,
+      "avgpool": 0.771523
+    }
+  },
+  "warnings": [
+    "Monotonicity heuristic violated: BIacc[layer4.2]=0.0060 < BIacc[layer1.0]=0.2794. Manual inspection advised."
+  ]
+}
