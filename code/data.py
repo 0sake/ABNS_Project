@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────
 
 def get_transform() -> transforms.Compose:
-    """Standard CIFAR-10 normalisation (no augmentation — inference only)."""
+    """Standard CIFAR-10 normalisation (no data augmentation — inference only)."""
     return transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=CIFAR10_MEAN, std=CIFAR10_STD),
@@ -69,6 +69,7 @@ def build_calibration_indices(
         indices : LongTensor of shape (N,)
     """
     rng = np.random.default_rng(seed)
+    # train_ds.targets is a python list of 50.000 int (0–9)
     targets = np.array(train_ds.targets)
     selected = []
 
