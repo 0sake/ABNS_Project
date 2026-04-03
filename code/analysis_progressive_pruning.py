@@ -1,9 +1,10 @@
 """
 Progressive pruning analysis for Block Influence pipeline.
 
-Two removal strategies:
+Three removal strategies:
   1. bi_acc ascending  — remove least accuracy-impactful blocks first
   2. delta=(bi_rep - bi_acc) descending — remove silent-failure blocks first
+  3. bi_rep ascending  — remove least representation-impactful blocks first
 
 Plots cumulative acc_lost and rep_lost curves side by side.
 Standalone: requires only numpy, matplotlib, json.
@@ -71,13 +72,20 @@ def main():
     labels2 = [blocks[i] for i in order2]
     acc2, rep2 = cumulative_losses(order2, bi_acc, bi_rep)
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5), constrained_layout=True)
+    # Strategy 3: ascending bi_rep (least representation-impactful first)
+    order3  = np.argsort(bi_rep)
+    labels3 = [blocks[i] for i in order3]
+    acc3, rep3 = cumulative_losses(order3, bi_acc, bi_rep)
+
+    fig, axes = plt.subplots(1, 3, figsize=(21, 5), constrained_layout=True)
     fig.suptitle("Progressive Block Pruning — Cumulative Impact", fontsize=12, fontweight="bold")
 
     plot_strategy(axes[0], steps, acc1, rep1, labels1,
                   "Strategy 1: BIacc ascending\n(least accuracy-impactful first)")
     plot_strategy(axes[1], steps, acc2, rep2, labels2,
                   "Strategy 2: Δ=(BIrep−BIacc) descending\n(silent-failure blocks first)")
+    plot_strategy(axes[2], steps, acc3, rep3, labels3,
+                  "Strategy 3: BIrep ascending\n(least representation-impactful first)")
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     fig.savefig(OUT_PATH, dpi=300, bbox_inches="tight")
