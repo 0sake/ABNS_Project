@@ -25,10 +25,12 @@ import torch
 from scipy import stats
 
 from config import (
-    ALPHA, JACCARD_K_VALUES, PHASE2_RESULTS,
+    ALPHA, CALIB_INDICES, JACCARD_K_VALUES, PHASE2_RESULTS,
     PHASE3_CORRELATIONS, PHASE3_JACCARD, PHASE3_PRUNING,
     RESULTS_DIR, SECONDARY_DELTA_THRESHOLD, TARGET_BLOCKS,
 )
+from data import get_class_conditional_loaders, load_cifar10
+from per_class_cka import run_per_class_cka
 
 logger = logging.getLogger(__name__)
 
@@ -621,6 +623,17 @@ def run_phase3(
         json.dump(pruning_results, f, indent=2)
     logger.info(f"Pruning analysis saved → {PHASE3_PRUNING}")
 
+    # Step 3.6 — Per-class CKA across all blocks
+    _train_ds, _ = load_cifar10()
+    _calib_indices = torch.load(CALIB_INDICES)
+    class_loaders = get_class_conditional_loaders(_train_ds, _calib_indices)
+    per_class_cka_results = run_per_class_cka(
+        model=model,
+        registry=registry,
+        class_loaders=class_loaders,
+        device=device,
+    )
+
     return {
         "correlations": corr_results,
         "jaccard": jaccard_results,
@@ -628,4 +641,5 @@ def run_phase3(
         "primary_candidate": primary,
         "secondary_candidates": secondary,
         "pruning": pruning_results,
+        "per_class_cka": per_class_cka_results,
     }
