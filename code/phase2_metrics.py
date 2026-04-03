@@ -25,6 +25,7 @@ from config import (
 )
 from model import ResNet50_CIFAR, build_block_registry, evaluate_accuracy, get_stage_output_module
 from utils import ActivationCapture, ablated_block, gap, tensor_checksum
+from bi_rep_extended import run_extended_birep
 
 logger = logging.getLogger(__name__)
 
@@ -487,10 +488,14 @@ def run_phase2(
         baseline_acc, device, calib_indices_path, env, warnings
     )
 
+    extended = run_extended_birep(model, registry, calib_loader, device, F_intact)
+
     return {
         "bi_geo": bi_geo,
         "bi_acc": bi_acc,
         "bi_rep": bi_rep,
         "bi_rep_multilayer": bi_rep_ml,
+        "bi_rep_gram": extended["bi_rep_gram"],
+        "bi_rep_class": extended["bi_rep_class"],
         "warnings": warnings,
     }

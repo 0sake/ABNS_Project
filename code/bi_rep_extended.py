@@ -445,26 +445,6 @@ def run_extended_birep(
         model, registry, calib_loader, device, F_intact, labels_intact
     )
 
-    # Deep-dive on primary silent failure candidate
-    if PHASE2_RESULTS.exists():
-        with open(PHASE2_RESULTS) as f:
-            p2 = json.load(f)
-        bi_acc = p2.get("bi_acc", {})
-        bi_rep = p2.get("bi_rep", {})
-        if bi_acc and bi_rep:
-            primary = max(TARGET_BLOCKS,
-                          key=lambda b: bi_rep.get(b, 0) - bi_acc.get(b, 0))
-            logger.info(f"\nClass-matrix deep-dive → primary candidate: {primary}")
-            S_intact  = torch.tensor(extended["s_intact"])
-            block = registry[primary]
-            is_ds = primary in DOWNSAMPLING_BLOCKS
-            with ablated_block(block, is_downsampling=is_ds):
-                F_abl, _ = extract_features_with_labels(model, calib_loader, device)
-            S_abl = class_cosine_matrix(
-                F_abl.to(device), labels_intact.to(device)
-            )
-            compare_class_matrices(S_intact.to(device), S_abl, primary)
-
     # Save
     save_extended_results(extended)
 

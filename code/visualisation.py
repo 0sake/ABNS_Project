@@ -15,6 +15,9 @@ Extended BIrep figures (bi_rep_extended.py):
     Fig 9  BIrep_class bar chart for all 16 blocks
     Fig 10 10x10 class cosine heatmaps: intact | ablated | difference
     Fig 11 Top-5 class-pair cosine similarity changes (before/after bar chart)
+
+Progressive pruning (phase3_analysis.py):
+    Fig 12 Progressive pruning — 3-panel cumulative BIacc/BIrep curves
 """
 
 import json
@@ -531,6 +534,55 @@ def fig11_class_pair_changes(
 
 
 # ─────────────────────────────────────────────────────────────
+# Fig 12 — Progressive pruning (3-panel cumulative curves)
+# ─────────────────────────────────────────────────────────────
+
+def fig12_progressive_pruning(pruning: dict) -> None:
+    """
+    Three-panel figure showing cumulative BIacc and BIrep as blocks are
+    progressively removed under each strategy.
+
+    Each panel plots two lines (BIacc and BIrep) against the pruning step,
+    with block names on the x-axis in removal order.
+    """
+    strategies = [
+        ("strategy1", "Strategy 1: BIacc ascending\n(least accuracy-impactful first)"),
+        ("strategy2", "Strategy 2: Δ=(BIrep−BIacc) descending\n(silent-failure blocks first)"),
+        ("strategy3", "Strategy 3: BIrep ascending\n(least representation-impactful first)"),
+    ]
+
+    steps = list(range(1, len(TARGET_BLOCKS) + 1))
+    color_acc = "#e05c5c"
+    color_rep = "#5c8ee0"
+
+    fig, axes = plt.subplots(1, 3, figsize=(21, 5), constrained_layout=True)
+    fig.suptitle("Fig 12 — Progressive Block Pruning — Cumulative Impact",
+                 fontsize=12, fontweight="bold")
+
+    for ax, (key, title) in zip(axes, strategies):
+        order   = pruning[f"{key}_order"]
+        acc_cum = pruning[f"{key}_cumulative_biacc"]
+        rep_cum = pruning[f"{key}_cumulative_birep"]
+
+        ax.plot(steps, acc_cum, marker="o", markersize=5, linewidth=1.8,
+                color=color_acc, label="Cumulative BIacc")
+        ax.plot(steps, rep_cum, marker="s", markersize=5, linewidth=1.8,
+                color=color_rep, label="Cumulative BIrep", linestyle="--")
+
+        ax.set_xticks(steps)
+        ax.set_xticklabels(order, rotation=45, ha="right", fontsize=7)
+        ax.set_xlabel("Block removed (left → right = pruning order)", fontsize=9)
+        ax.set_ylabel("Cumulative loss", fontsize=9)
+        ax.set_title(title, fontsize=10, fontweight="bold")
+        ax.legend(fontsize=8)
+        ax.grid(True, linestyle=":", alpha=0.5)
+        ax.set_xlim(steps[0] - 0.5, steps[-1] + 0.5)
+        ax.set_ylim(bottom=0)
+
+    _save(fig, "fig12_progressive_pruning.png")
+
+
+# ─────────────────────────────────────────────────────────────
 # Main: generate all figures from saved result files
 # ─────────────────────────────────────────────────────────────
 
@@ -621,5 +673,12 @@ def generate_all_figures(phase3_results: dict, model=None, registry=None,
             "bi_rep_gram / bi_rep_class / s_intact_10x10 not found in phase2_results.json. "
             "Run bi_rep_extended first."
         )
+
+    # ── Fig 12 (progressive pruning) ──────────────────────────
+    pruning = phase3_results.get("pruning")
+    if pruning:
+        fig12_progressive_pruning(pruning)
+    else:
+        logger.info("Fig 12 skipped: no pruning data in phase3_results.")
 
     logger.info("All figures generated ✓")

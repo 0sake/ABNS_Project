@@ -26,7 +26,7 @@ from scipy import stats
 
 from config import (
     ALPHA, JACCARD_K_VALUES, PHASE2_RESULTS,
-    PHASE3_CORRELATIONS, PHASE3_JACCARD,
+    PHASE3_CORRELATIONS, PHASE3_JACCARD, PHASE3_PRUNING,
     RESULTS_DIR, SECONDARY_DELTA_THRESHOLD, TARGET_BLOCKS,
 )
 
@@ -475,6 +475,58 @@ def run_consistency_check(corr_results: dict, jaccard_results: dict) -> list[str
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Step 3.5 — Progressive Pruning Analysis
+# ═══════════════════════════════════════════════════════════════════════════
+
+def analyse_progressive_pruning(bi_acc: dict, bi_rep: dict) -> dict:
+    """
+    Pure post-hoc simulation of three progressive block pruning orderings.
+    No GPU, no forward passes — uses only values already in phase2_results.json.
+
+    Strategy 1: ascending BIacc  (least accuracy-impactful blocks first)
+    Strategy 2: descending Δ = BIrep − BIacc  (silent-failure blocks first)
+    Strategy 3: ascending BIrep  (least representation-impactful blocks first)
+
+    For each step k, cumulative_X[k-1] = sum of metric X for the first k removed blocks.
+    """
+    logger.info("─" * 60)
+    logger.info("Step 3.5 — Progressive pruning analysis")
+
+    order1 = sorted(TARGET_BLOCKS, key=lambda b: bi_acc[b])
+    delta  = {b: bi_rep[b] - bi_acc[b] for b in TARGET_BLOCKS}
+    order2 = sorted(TARGET_BLOCKS, key=lambda b: delta[b], reverse=True)
+    order3 = sorted(TARGET_BLOCKS, key=lambda b: bi_rep[b])
+
+    def cumulative(order: list, metric: dict) -> list:
+        running, vals = 0.0, []
+        for b in order:
+            running += metric[b]
+            vals.append(round(running, 6))
+        return vals
+
+    results = {
+        "strategy1_order": order1,
+        "strategy2_order": order2,
+        "strategy3_order": order3,
+        "strategy1_cumulative_biacc": cumulative(order1, bi_acc),
+        "strategy1_cumulative_birep": cumulative(order1, bi_rep),
+        "strategy2_cumulative_biacc": cumulative(order2, bi_acc),
+        "strategy2_cumulative_birep": cumulative(order2, bi_rep),
+        "strategy3_cumulative_biacc": cumulative(order3, bi_acc),
+        "strategy3_cumulative_birep": cumulative(order3, bi_rep),
+    }
+
+    for i, strat in enumerate(["strategy1", "strategy2", "strategy3"], 1):
+        final_acc = results[f"{strat}_cumulative_biacc"][-1]
+        final_rep = results[f"{strat}_cumulative_birep"][-1]
+        logger.info(
+            f"  Strategy {i}: final cumulative BIacc={final_acc:.4f}  BIrep={final_rep:.4f}"
+        )
+
+    return results
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Entry point
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -498,9 +550,9 @@ def run_phase3(
     with open(PHASE2_RESULTS) as f:
         p2 = json.load(f)
 
-    bi_geo = p2["bi_geo"]
-    bi_acc = p2["bi_acc"]
-    bi_rep = p2["bi_rep"]
+    bi_geo    = p2["bi_geo"]
+    bi_acc    = p2["bi_acc"]
+    bi_rep    = p2["bi_rep"]
     bi_rep_ml = p2["bi_rep_multilayer"]
 
     # 3.1
@@ -544,10 +596,36 @@ def run_phase3(
             json.dump(sf_result, f, indent=2)
         logger.info(f"Silent failure analysis saved → {out_path}")
 
+    # Class-pair deep-dive for primary candidate (Step 3.3 extension)
+    s_intact_raw = p2.get("s_intact_10x10")
+    if s_intact_raw and primary:
+        from bi_rep_extended import (
+            compare_class_matrices, extract_features_with_labels, class_cosine_matrix,
+        )
+        from config import DOWNSAMPLING_BLOCKS
+        from utils import ablated_block
+        S_intact   = torch.tensor(s_intact_raw).to(device)
+        block_cand = registry[primary[0]]
+        is_ds_cand = primary[0] in DOWNSAMPLING_BLOCKS
+        with torch.no_grad():
+            with ablated_block(block_cand, is_downsampling=is_ds_cand):
+                F_abl_cand, labels_cand = extract_features_with_labels(
+                    model, calib_loader, device
+                )
+        S_abl_cand = class_cosine_matrix(F_abl_cand.to(device), labels_cand.to(device))
+        compare_class_matrices(S_intact, S_abl_cand, primary[0])
+
+    # 3.5 — Progressive pruning
+    pruning_results = analyse_progressive_pruning(bi_acc, bi_rep)
+    with open(PHASE3_PRUNING, "w") as f:
+        json.dump(pruning_results, f, indent=2)
+    logger.info(f"Pruning analysis saved → {PHASE3_PRUNING}")
+
     return {
         "correlations": corr_results,
         "jaccard": jaccard_results,
         "silent_failure": sf_results,
         "primary_candidate": primary,
         "secondary_candidates": secondary,
+        "pruning": pruning_results,
     }
