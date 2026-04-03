@@ -142,7 +142,9 @@ def main() -> None:
                 "Phase 2 results not found. Run Phase 2 first."
             )
         logger.info(f"Phase 2 results loaded from {PHASE2_RESULTS}")
-        p2_results = None  # Phase 3 reads directly from disk
+        with open(cfg.PHASE2_RESULTS) as f:
+            meta = json.load(f)
+        p2_results = meta  # Phase 3 reads directly from disk
     #MLFLOW LOGGING
     log_phase2(p2_results)
     # ── Phase 3 ───────────────────────────────────────────────────
