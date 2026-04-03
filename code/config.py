@@ -25,6 +25,7 @@ PHASE2_RESULTS = RESULTS_DIR / "phase2_results.json"
 # Phase 3 outputs
 PHASE3_CORRELATIONS = RESULTS_DIR / "phase3_correlations.json"
 PHASE3_JACCARD      = RESULTS_DIR / "phase3_jaccard.json"
+PHASE3_PRUNING      = RESULTS_DIR / "phase3_pruning.json"
 
 # ── Reproducibility ─────────────────────────────────────────────────────────
 SEED = 42
