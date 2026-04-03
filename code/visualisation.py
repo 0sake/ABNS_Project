@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
-from config import FIGURES_DIR, PHASE2_RESULTS, PHASE3_CORRELATIONS, PHASE3_JACCARD, RESULTS_DIR, TARGET_BLOCKS
+from config import FIGURES_DIR, PHASE2_RESULTS, PHASE3_CORRELATIONS, PHASE3_JACCARD, PHASE3_PER_CLASS_CKA, RESULTS_DIR, TARGET_BLOCKS
 
 logger = logging.getLogger(__name__)
 
@@ -583,6 +583,82 @@ def fig12_progressive_pruning(pruning: dict) -> None:
 
 
 # ─────────────────────────────────────────────────────────────
+# Fig 13 — Per-class CKA heatmap (all blocks × all classes)
+# ─────────────────────────────────────────────────────────────
+
+def fig13_per_class_cka_heatmap(per_class_cka: dict) -> None:
+    """16×10 heatmap of per-class linear CKA (intact vs ablated).
+
+    Rows = all 16 TARGET_BLOCKS (top to bottom).
+    Columns = 10 CIFAR-10 classes.
+    Blocks are visually grouped by ResNet stage with horizontal separators.
+    """
+    n_blocks = len(TARGET_BLOCKS)
+    n_classes = len(CIFAR10_CLASSES)
+
+    data = np.zeros((n_blocks, n_classes))
+    for i, block_name in enumerate(TARGET_BLOCKS):
+        for j in range(n_classes):
+            data[i, j] = per_class_cka.get(block_name, {}).get(j, 0.0)
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+    im = ax.imshow(data, aspect="auto", cmap="viridis", vmin=0, vmax=1)
+    fig.colorbar(im, ax=ax, label="Linear CKA")
+
+    ax.set_xticks(range(n_classes))
+    ax.set_xticklabels(CIFAR10_CLASSES, rotation=45, ha="right", fontsize=9)
+    ax.set_yticks(range(n_blocks))
+    ax.set_yticklabels(TARGET_BLOCKS, fontsize=8)
+
+    # Stage separators
+    for sep_y in (2.5, 6.5, 12.5):
+        ax.axhline(sep_y, color="white", linewidth=2)
+
+    # Stage labels on the left margin
+    stage_centres = [(1, "Stage 1"), (4.5, "Stage 2"), (9.5, "Stage 3"), (14, "Stage 4")]
+    for y_centre, label in stage_centres:
+        ax.text(-1.6, y_centre, label, va="center", ha="right",
+                fontsize=8, fontweight="bold", color="#333333")
+
+    ax.set_title("Fig 13 — Per-Class Linear CKA (Intact vs Ablated) — All Blocks",
+                 fontsize=12, fontweight="bold", pad=10)
+    fig.tight_layout()
+    _save(fig, "fig13_per_class_cka_heatmap.png")
+
+
+# ─────────────────────────────────────────────────────────────
+# Fig 14 — Per-class CKA bar charts for top-5 blocks (multi-panel)
+# ─────────────────────────────────────────────────────────────
+
+def fig14_top5_per_class_bar(per_class_cka: dict) -> None:
+    """Multi-panel bar chart: per-class CKA for the top-5 blocks by BIrep.
+
+    Fixed block order (top-5 by BIrep influence):
+        layer1.0, layer3.0, layer2.0, layer4.0, layer1.1
+    Each panel replicates the Fig 6 bar-chart style for one block.
+    """
+    top5 = ["layer1.0", "layer3.0", "layer2.0", "layer4.0", "layer1.1"]
+    fig, axes = plt.subplots(1, 5, figsize=(18, 4), sharey=True,
+                             constrained_layout=True)
+    fig.suptitle("Fig 14 — Per-Class CKA — Top-5 Blocks by BIrep",
+                 fontsize=13, fontweight="bold")
+
+    for ax, block_name in zip(axes, top5):
+        scores = [per_class_cka.get(block_name, {}).get(j, 0.0)
+                  for j in range(len(CIFAR10_CLASSES))]
+        variance = float(np.var(scores))
+        ax.bar(range(len(CIFAR10_CLASSES)), scores, color="#4C72B0")
+        ax.set_xticks(range(len(CIFAR10_CLASSES)))
+        ax.set_xticklabels(CIFAR10_CLASSES, rotation=45, ha="right", fontsize=8)
+        ax.set_title(f"{block_name}\nvar={variance:.4f}", fontsize=10, fontweight="bold")
+        ax.set_ylim(0, 1)
+        ax.grid(True, linestyle=":", alpha=0.4)
+
+    axes[0].set_ylabel("Linear CKA", fontsize=10)
+    _save(fig, "fig14_top5_per_class_bar.png")
+
+
+# ─────────────────────────────────────────────────────────────
 # Main: generate all figures from saved result files
 # ─────────────────────────────────────────────────────────────
 
@@ -598,6 +674,15 @@ def generate_all_figures(phase3_results: dict, model=None, registry=None,
         corr = json.load(f)
     with open(PHASE3_JACCARD) as f:
         jac = json.load(f)
+
+    per_class_cka: dict = {}
+    if PHASE3_PER_CLASS_CKA.exists():
+        with open(PHASE3_PER_CLASS_CKA) as f:
+            raw = json.load(f)
+        per_class_cka = {
+            block: {int(k): v for k, v in cls_dict.items()}
+            for block, cls_dict in raw.items()
+        }
 
     bi_geo       = p2["bi_geo"]
     bi_acc       = p2["bi_acc"]
@@ -680,5 +765,12 @@ def generate_all_figures(phase3_results: dict, model=None, registry=None,
         fig12_progressive_pruning(pruning)
     else:
         logger.info("Fig 12 skipped: no pruning data in phase3_results.")
+
+    # ── Figs 13–14 (per-class CKA) ───────────────────────────
+    if per_class_cka:
+        fig13_per_class_cka_heatmap(per_class_cka)
+        fig14_top5_per_class_bar(per_class_cka)
+    else:
+        logger.info("Figs 13–14 skipped: per-class CKA data not found.")
 
     logger.info("All figures generated ✓")
