@@ -7,3 +7,6 @@ __pycache__/
 # *.bin
 *.pth
 *.pt
+mlruns/
+*.md
+*.db
