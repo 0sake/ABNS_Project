@@ -250,7 +250,7 @@ def fig7_entropy_violin(block_name: str, sf_json_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(5, 4))
     bars = ax.bar(labels, means, color=["#4C72B0", "#DD8452"], alpha=0.85, width=0.4)
     ax.set_ylabel("Mean Shannon Entropy")
-    ax.set_title(f"Fig 7 — Entropy Comparison on C_l: {block_name}\n"
+    ax.set_title(f"Fig 7 — Entropy Comparison on C_l (correctly classified samples): {block_name}\n"
                  f"ΔH_mean={ent['mean_delta_H']:.4f}  "
                  f"Wilcoxon p={ent['wilcoxon_p']:.4f}"
                  f"{'*' if ent['significant'] else ''}", fontsize=11)
