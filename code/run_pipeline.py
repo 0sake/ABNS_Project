@@ -22,13 +22,14 @@ import torch
 import config as cfg
 from config import (
     CALIB_INDICES, MODEL_CKPT, PHASE2_RESULTS,
-    REF_REPR, RESULTS_DIR, FIGURES_DIR, SEED,
+    PRUNING_REAL_RESULTS, REF_REPR, RESULTS_DIR, FIGURES_DIR, SEED,
 )
 from data import get_calibration_loader, get_test_loader, load_cifar10, load_or_build_calibration_indices
 from model import build_block_registry, load_model
 from phase1_baseline import run_phase1
 from phase2_metrics import run_phase2
 from phase3_analysis import run_phase3
+from analysis_progressive_pruning_real import run_real_progressive_pruning
 from visualisation import generate_all_figures
 from utils import log_environment, set_seed
 
@@ -53,6 +54,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--skip-figures", action="store_true",
         help="Skip figure generation (useful for headless runs)"
+    )
+    p.add_argument(
+        "--force-rerun-pruning-real", action="store_true",
+        help="Force re-run of real progressive pruning even if cached results exist"
     )
     return p.parse_args()
 
@@ -158,17 +163,42 @@ def main() -> None:
             F_intact=F_intact,
             baseline_acc=baseline_acc,
         )
-
-        if not args.skip_figures:
-            generate_all_figures(
-                p3_results,
-                model=model,
-                registry=registry,
-                calib_loader=calib_loader,
-                device=device,
-            )
     else:
         p3_results = None
+
+    # ── Real Progressive Pruning ──────────────────────────────
+    if not PHASE2_RESULTS.exists():
+        logger.warning("Skipping real progressive pruning: Phase 2 results not found.")
+        pruning_real_results = None
+    elif PRUNING_REAL_RESULTS.exists() and not args.force_rerun_pruning_real:
+        logger.info(f"Real progressive pruning results loaded from {PRUNING_REAL_RESULTS}")
+        with open(PRUNING_REAL_RESULTS) as f:
+            pruning_real_results = json.load(f)
+    else:
+        logger.info("\n" + "═" * 60)
+        logger.info("REAL PROGRESSIVE PRUNING")
+        logger.info("═" * 60)
+        with open(PHASE2_RESULTS) as f:
+            p2_for_pruning = json.load(f)
+        pruning_real_results = run_real_progressive_pruning(
+            model=model,
+            registry=registry,
+            test_loader=test_loader,
+            calib_loader=calib_loader,
+            device=device,
+            phase2_results=p2_for_pruning,
+        )
+
+    # ── Figures ───────────────────────────────────────────────
+    if run_p3 and not args.skip_figures:
+        generate_all_figures(
+            p3_results,
+            model=model,
+            registry=registry,
+            calib_loader=calib_loader,
+            device=device,
+            pruning_real_results=pruning_real_results,
+        )
     #MLFLOW LOGGING
     log_phase3(figure_dir=RESULTS_DIR / "figures")
     elapsed = time.time() - t_total

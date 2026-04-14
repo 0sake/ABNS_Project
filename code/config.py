@@ -27,6 +27,7 @@ PHASE3_CORRELATIONS = RESULTS_DIR / "phase3_correlations.json"
 PHASE3_JACCARD      = RESULTS_DIR / "phase3_jaccard.json"
 PHASE3_PRUNING      = RESULTS_DIR / "phase3_pruning.json"
 PHASE3_PER_CLASS_CKA = RESULTS_DIR / "phase3_per_class_cka.json"
+PRUNING_REAL_RESULTS = RESULTS_DIR / "progressive_pruning_real.json"
 
 # ── Reproducibility ─────────────────────────────────────────────────────────
 SEED = 42
