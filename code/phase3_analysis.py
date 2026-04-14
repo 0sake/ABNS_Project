@@ -623,6 +623,17 @@ def run_phase3(
         json.dump(pruning_results, f, indent=2)
     logger.info(f"Pruning analysis saved → {PHASE3_PRUNING}")
 
+    # Persist slim results for --figures-only mode
+    from config import PHASE3_RESULTS
+    slim = {
+        "primary_candidate":    primary,
+        "secondary_candidates": secondary,
+        "pruning":              pruning_results,
+    }
+    with open(PHASE3_RESULTS, "w") as f:
+        json.dump(slim, f, indent=2)
+    logger.info(f"Phase 3 results saved → {PHASE3_RESULTS}")
+
     # Step 3.6 — Per-class CKA across all blocks
     _train_ds, _ = load_cifar10()
     _calib_indices = torch.load(CALIB_INDICES)

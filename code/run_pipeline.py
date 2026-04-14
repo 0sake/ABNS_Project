@@ -21,7 +21,7 @@ import torch
 
 import config as cfg
 from config import (
-    CALIB_INDICES, MODEL_CKPT, PHASE2_RESULTS,
+    CALIB_INDICES, MODEL_CKPT, PHASE2_RESULTS, PHASE3_RESULTS,
     PRUNING_REAL_RESULTS, REF_REPR, RESULTS_DIR, FIGURES_DIR, SEED,
 )
 from data import get_calibration_loader, get_test_loader, load_cifar10, load_or_build_calibration_indices
@@ -59,6 +59,10 @@ def parse_args() -> argparse.Namespace:
         "--force-rerun-pruning-real", action="store_true",
         help="Force re-run of real progressive pruning even if cached results exist"
     )
+    p.add_argument(
+        "--figures-only", action="store_true",
+        help="Regenerate figures from cached results without re-running any phase"
+    )
     return p.parse_args()
 
 
@@ -84,6 +88,32 @@ def main() -> None:
     env = log_environment()
     device = resolve_device(args.device)
     logger.info(f"Running on: {device}")
+
+    # ── Figures-only fast path ────────────────────────────────────
+    if args.figures_only:
+        for required in (PHASE3_RESULTS, PHASE2_RESULTS):
+            if not required.exists():
+                raise FileNotFoundError(
+                    f"Required cache file not found: {required}\n"
+                    "Run the full pipeline first to generate cached results."
+                )
+        with open(PHASE3_RESULTS) as f:
+            p3_results = json.load(f)
+        pruning_real_results = None
+        if PRUNING_REAL_RESULTS.exists():
+            with open(PRUNING_REAL_RESULTS) as f:
+                pruning_real_results = json.load(f)
+        generate_all_figures(
+            p3_results,
+            model=None,
+            registry=None,
+            calib_loader=None,
+            device=None,
+            pruning_real_results=pruning_real_results,
+        )
+        elapsed = time.time() - t_total
+        logger.info(f"Figures regenerated in {elapsed:.1f}s → {FIGURES_DIR}")
+        return
 
     run_all  = args.phase == "all"
     run_p1   = run_all or args.phase == "1"
