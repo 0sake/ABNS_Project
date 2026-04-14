@@ -659,12 +659,125 @@ def fig14_top5_per_class_bar(per_class_cka: dict) -> None:
 
 
 # ─────────────────────────────────────────────────────────────
+# Fig 15 — Real vs Simulated Progressive Pruning (2×2 grid)
+# ─────────────────────────────────────────────────────────────
+
+def plot_progressive_pruning_real(pruning_real_results: dict) -> None:
+    """
+    2×2 figure comparing real and simulated progressive pruning under two strategies.
+
+    Rows  : strategy1 (BIacc ascending) | strategy3 (BIrep ascending)
+    Col 0 : Accuracy & Representation
+              left  y-axis — BIrep_k (real, blue dashed)
+                           — simulated cumulative BIacc normalized (red dotted)
+                           — simulated cumulative BIrep normalized (blue dotted)
+              right y-axis — acc_k (real, red solid)
+    Col 1 : Confidence & Entropy
+              conf_mean (orange solid)
+              H_Cl      (purple solid — entropy on correctly predicted samples)
+              H_mean    (gray dashed  — entropy on all samples)
+
+    x-ticks: block name added at each pruning step.
+    """
+    strategy_labels = {
+        "strategy1": "Strategy 1: BIacc ascending\n(least accuracy-impactful first)",
+        "strategy3": "Strategy 3: BIrep ascending\n(least representation-impactful first)",
+    }
+
+    fig, axes = plt.subplots(2, 2, figsize=(18, 10), constrained_layout=True)
+    fig.suptitle("Fig 15 — Real vs Simulated Progressive Pruning",
+                 fontsize=13, fontweight="bold")
+
+    for row_idx, strategy_key in enumerate(("strategy1", "strategy3")):
+        if strategy_key not in pruning_real_results:
+            continue
+
+        strat = pruning_real_results[strategy_key]
+        order     = strat["order"]
+        real      = strat["real"]
+        simulated = strat["simulated"]
+
+        n = len(order)
+        ks = list(range(1, n + 1))
+
+        acc_vals   = [real[f"k{k}"]["acc"]       for k in ks]
+        birep_vals = [real[f"k{k}"]["BIrep"]      for k in ks]
+        conf_vals  = [real[f"k{k}"]["conf_mean"]  for k in ks]
+        H_vals     = [real[f"k{k}"]["H_mean"]     for k in ks]
+        HCl_vals   = [real[f"k{k}"]["H_Cl"]       for k in ks]
+
+        sim_bacc = [simulated[f"k{k}"]["cumulative_biacc"] for k in ks]
+        sim_brep = [simulated[f"k{k}"]["cumulative_birep"] for k in ks]
+
+        # Normalize simulated curves to their final value for comparability
+        norm_bacc = sim_bacc[-1] if sim_bacc[-1] != 0 else 1.0
+        norm_brep = sim_brep[-1] if sim_brep[-1] != 0 else 1.0
+        sim_bacc_norm = [v / norm_bacc for v in sim_bacc]
+        sim_brep_norm = [v / norm_brep for v in sim_brep]
+
+        # ── Panel [row, 0]: Accuracy & Representation ──────────
+        ax0 = axes[row_idx, 0]
+        ax0_r = ax0.twinx()   # right y-axis for accuracy
+
+        ln1, = ax0.plot(ks, birep_vals,     color="#5c8ee0", linestyle="--",
+                        linewidth=1.8, marker="s", markersize=4, label="BIrep (real)")
+        ln2, = ax0.plot(ks, sim_bacc_norm,  color="#e05c5c", linestyle=":",
+                        linewidth=1.5, label="Sim BIacc (norm)")
+        ln3, = ax0.plot(ks, sim_brep_norm,  color="#5c8ee0", linestyle=":",
+                        linewidth=1.5, label="Sim BIrep (norm)")
+        ln4, = ax0_r.plot(ks, acc_vals,     color="#e05c5c", linestyle="-",
+                          linewidth=2.0, marker="o", markersize=4, label="Acc (real)")
+
+        ax0.set_ylabel("BIrep / Normalized Simulated", fontsize=9)
+        ax0_r.set_ylabel("Accuracy", fontsize=9, color="#e05c5c")
+        ax0_r.tick_params(axis="y", labelcolor="#e05c5c")
+        ax0_r.set_ylim(0, 1.05)
+        ax0.set_ylim(bottom=0)
+
+        ax0.set_xticks(ks)
+        ax0.set_xticklabels(order, rotation=45, ha="right", fontsize=7)
+        ax0.set_xlabel("Block removed (left → right)", fontsize=8)
+        ax0.set_title(
+            f"{strategy_labels[strategy_key]}\nAccuracy & Representation",
+            fontsize=9, fontweight="bold"
+        )
+        ax0.grid(True, linestyle=":", alpha=0.5)
+        lines = [ln1, ln2, ln3, ln4]
+        ax0.legend(lines, [l.get_label() for l in lines], fontsize=7, loc="upper left")
+
+        # ── Panel [row, 1]: Confidence & Entropy ───────────────
+        ax1 = axes[row_idx, 1]
+
+        ax1.plot(ks, conf_vals, color="orange",  linestyle="-",  linewidth=1.8,
+                 marker="o", markersize=4, label="Confidence (mean top-1)")
+        ax1.plot(ks, HCl_vals,  color="purple",  linestyle="-",  linewidth=1.8,
+                 marker="^", markersize=4, label="H_Cl (entropy, correct samples)")
+        ax1.plot(ks, H_vals,    color="gray",    linestyle="--", linewidth=1.5,
+                 label="H_mean (entropy, all samples)")
+
+        ax1.set_xticks(ks)
+        ax1.set_xticklabels(order, rotation=45, ha="right", fontsize=7)
+        ax1.set_xlabel("Block removed (left → right)", fontsize=8)
+        ax1.set_ylabel("Value (nats / probability)", fontsize=9)
+        ax1.set_title(
+            f"{strategy_labels[strategy_key]}\nConfidence & Entropy",
+            fontsize=9, fontweight="bold"
+        )
+        ax1.legend(fontsize=7)
+        ax1.grid(True, linestyle=":", alpha=0.5)
+        ax1.set_ylim(bottom=0)
+
+    _save(fig, "fig_progressive_pruning_real.png")
+
+
+# ─────────────────────────────────────────────────────────────
 # Main: generate all figures from saved result files
 # ─────────────────────────────────────────────────────────────
 
 def generate_all_figures(phase3_results: dict, model=None, registry=None,
-                         calib_loader=None, device=None) -> None:
-    """Generate Figs 1–11 from cached result dicts."""
+                         calib_loader=None, device=None,
+                         pruning_real_results=None) -> None:
+    """Generate Figs 1–15 from cached result dicts."""
     logger.info("=" * 60)
     logger.info("Generating figures …")
 
@@ -772,5 +885,11 @@ def generate_all_figures(phase3_results: dict, model=None, registry=None,
         fig14_top5_per_class_bar(per_class_cka)
     else:
         logger.info("Figs 13–14 skipped: per-class CKA data not found.")
+
+    # ── Fig 15 (real progressive pruning) ────────────────────
+    if pruning_real_results:
+        plot_progressive_pruning_real(pruning_real_results)
+    else:
+        logger.info("Fig 15 skipped: no real progressive pruning data provided.")
 
     logger.info("All figures generated ✓")
