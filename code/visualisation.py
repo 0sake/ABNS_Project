@@ -712,7 +712,7 @@ def plot_progressive_pruning_real(pruning_real_results: dict) -> None:
         # Normalize simulated curves to their final value for comparability
         norm_bacc = sim_bacc[-1] if sim_bacc[-1] != 0 else 1.0
         norm_brep = sim_brep[-1] if sim_brep[-1] != 0 else 1.0
-        sim_bacc_norm = [v / norm_bacc for v in sim_bacc]
+        sim_bacc_norm = [1.0 - v / norm_bacc for v in sim_bacc]  # reversed: cumulative loss 0→1 becomes 1→0
         sim_brep_norm = [v / norm_brep for v in sim_brep]
 
         # ── Panel [row, 0]: Accuracy & Representation ──────────
