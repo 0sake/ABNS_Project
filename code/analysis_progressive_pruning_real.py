@@ -151,8 +151,9 @@ def run_real_progressive_pruning(
     measure actual accuracy / CKA disruption / confidence / entropy at each k.
 
     Strategies tested:
-        strategy1 — blocks sorted by bi_acc ascending (least accuracy-impactful first)
-        strategy3 — blocks sorted by bi_rep ascending (least representation-impactful first)
+        strategy1    — blocks sorted by bi_acc ascending (least accuracy-impactful first)
+        strategy3    — blocks sorted by bi_rep ascending (least representation-impactful first)
+        strategy_geo — blocks sorted by bi_geo ascending (least geometry-impactful first)
 
     F_intact is loaded from REF_REPR (never recomputed).
     All k context managers are entered via ExitStack before any forward pass,
@@ -170,8 +171,9 @@ def run_real_progressive_pruning(
     logger.info(f"  F_intact shape: {tuple(F_intact.shape)}")
 
     strategies = {
-        "strategy1": _build_order(phase2_results, "bi_acc"),
-        "strategy3": _build_order(phase2_results, "bi_rep"),
+        "strategy1":    _build_order(phase2_results, "bi_acc"),
+        "strategy3":    _build_order(phase2_results, "bi_rep"),
+        "strategy_geo": _build_order(phase2_results, "bi_geo"),
     }
 
     results = {}

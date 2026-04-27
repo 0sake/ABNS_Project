@@ -664,9 +664,9 @@ def fig14_top5_per_class_bar(per_class_cka: dict) -> None:
 
 def plot_progressive_pruning_real(pruning_real_results: dict) -> None:
     """
-    2×2 figure comparing real and simulated progressive pruning under two strategies.
+    3×2 figure comparing real and simulated progressive pruning under three strategies.
 
-    Rows  : strategy1 (BIacc ascending) | strategy3 (BIrep ascending)
+    Rows  : strategy1 (BIacc ascending) | strategy3 (BIrep ascending) | strategy_geo (BIgeo ascending)
     Col 0 : Accuracy & Representation
               left  y-axis — BIrep_k (real, blue dashed)
                            — simulated cumulative BIacc normalized (red dotted)
@@ -680,15 +680,16 @@ def plot_progressive_pruning_real(pruning_real_results: dict) -> None:
     x-ticks: block name added at each pruning step.
     """
     strategy_labels = {
-        "strategy1": "Strategy 1: BIacc ascending\n(least accuracy-impactful first)",
-        "strategy3": "Strategy 3: BIrep ascending\n(least representation-impactful first)",
+        "strategy1":    "Strategy 1: BIacc ascending\n(least accuracy-impactful first)",
+        "strategy3":    "Strategy 3: BIrep ascending\n(least representation-impactful first)",
+        "strategy_geo": "Strategy Geo: BIgeo ascending\n(least geometry-impactful first)",
     }
 
-    fig, axes = plt.subplots(2, 2, figsize=(18, 10), constrained_layout=True)
+    fig, axes = plt.subplots(3, 2, figsize=(18, 15), constrained_layout=True)
     fig.suptitle("Fig 15 — Real vs Simulated Progressive Pruning",
                  fontsize=13, fontweight="bold")
 
-    for row_idx, strategy_key in enumerate(("strategy1", "strategy3")):
+    for row_idx, strategy_key in enumerate(("strategy1", "strategy3", "strategy_geo")):
         if strategy_key not in pruning_real_results:
             continue
 
