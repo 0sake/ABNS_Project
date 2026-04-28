@@ -37,6 +37,27 @@ def get_transform() -> transforms.Compose:
 # Dataset loading
 # ──────────────────────────────────────────────
 
+def get_train_transform() -> transforms.Compose:
+    """Standard CIFAR-10 training augmentation for student training in Phase 4."""
+    return transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=CIFAR10_MEAN, std=CIFAR10_STD),
+    ])
+
+
+def load_cifar10_train_augmented(data_dir: str = "./data") -> datasets.CIFAR10:
+    """
+    Load CIFAR-10 training set with standard augmentation.
+    Used by Phase 4 to train the student from scratch.
+    The test/calib sets still use get_transform() (no augmentation).
+    """
+    ds = datasets.CIFAR10(data_dir, train=True, download=False, transform=get_train_transform())
+    logger.info(f"CIFAR-10 augmented train set: {len(ds)} samples")
+    return ds
+
+
 def load_cifar10(data_dir: str = "./data") -> tuple[datasets.CIFAR10, datasets.CIFAR10]:
     """
     Download (if needed) and return the full CIFAR-10 train and test sets
