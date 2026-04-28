@@ -2,7 +2,7 @@
 import mlflow
 import json
 from pathlib import Path
-from config import SEED, N_CALIBRATION, TARGET_BLOCKS
+from config import SEED, N_CALIBRATION, TARGET_BLOCKS, PHASE4_RESULTS
 
 EXPERIMENT_NAME = "block-influence-resnet50-cifar10"
 
@@ -142,3 +142,67 @@ def log_phase3(figure_dir: Path = None):
         if figure_dir and figure_dir.exists():
             for fig_path in sorted(figure_dir.glob("*.png")):
                 mlflow.log_artifact(str(fig_path), artifact_path="figures")
+
+
+def log_phase4(results: dict):
+    """
+    Log Phase 4 KD results to MLflow.
+    One child run per (condition, seed); parent run holds stage weights & metadata.
+    """
+    init_experiment()
+
+    stage_weights = results.get("stage_weights", {})
+    meta = results.get("metadata", {})
+
+    with mlflow.start_run(run_name="phase4_distillation"):
+        # Log metadata common to all conditions
+        mlflow.log_params({
+            "n_epochs":  meta.get("n_epochs"),
+            "gamma_kd":  meta.get("gamma_kd"),
+            "seeds":     str(meta.get("seeds")),
+            "conditions": str(meta.get("conditions")),
+        })
+        dry = meta.get("dry_run", {})
+        if dry:
+            mlflow.log_metrics({
+                "dry_run_mean_ce":        dry.get("mean_ce", 0),
+                "dry_run_mean_sp_scaled": dry.get("mean_sp_scaled", 0),
+                "dry_run_ratio":          dry.get("ratio", 0),
+            })
+
+        # Log stage weights
+        for metric_name, w_dict in stage_weights.items():
+            for stage, val in w_dict.items():
+                mlflow.log_param(f"w_{metric_name}_{stage}", round(val, 4))
+
+        # One nested run per (condition, seed)
+        for cond, cond_data in results.get("conditions", {}).items():
+            for seed_key, run_data in cond_data.items():
+                with mlflow.start_run(run_name=f"phase4_{cond}_{seed_key}", nested=True):
+                    mlflow.log_params({"condition": cond, "seed": seed_key})
+
+                    # Weights for this condition
+                    if cond in stage_weights:
+                        for stage, w in stage_weights[cond].items():
+                            mlflow.log_param(f"weight_{stage}", round(w, 4))
+
+                    # Final summary metrics
+                    mlflow.log_metric("final_accuracy", run_data.get("final_accuracy", 0))
+                    if run_data.get("final_cka") is not None:
+                        mlflow.log_metric("final_cka", run_data["final_cka"])
+
+                    # Per-epoch accuracy and loss curves
+                    for ep, acc in enumerate(run_data.get("accuracy_curve", []), 1):
+                        mlflow.log_metric("test_accuracy", acc, step=ep)
+                    for ep, ce in enumerate(run_data.get("ce_loss_curve", []), 1):
+                        mlflow.log_metric("train_ce_loss", ce, step=ep)
+                    for ep, sp in enumerate(run_data.get("sp_loss_curve", []), 1):
+                        mlflow.log_metric("train_sp_loss_scaled", sp, step=ep)
+
+                    # Sparse CKA curve (logged at actual epoch numbers)
+                    for ep, cka in run_data.get("cka_curve", []):
+                        mlflow.log_metric("transfer_cka", cka, step=ep)
+
+        # Full JSON as artifact
+        if PHASE4_RESULTS.exists():
+            mlflow.log_artifact(str(PHASE4_RESULTS))

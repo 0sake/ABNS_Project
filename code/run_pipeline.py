@@ -15,7 +15,7 @@ import logging
 import time
 from pathlib import Path
 
-from tracking import init_experiment, log_phase1, log_phase2, log_phase3
+from tracking import init_experiment, log_phase1, log_phase2, log_phase3, log_phase4
 
 import torch
 
@@ -24,7 +24,11 @@ from config import (
     CALIB_INDICES, MODEL_CKPT, PHASE2_RESULTS, PHASE3_RESULTS,
     PRUNING_REAL_RESULTS, REF_REPR, RESULTS_DIR, FIGURES_DIR, SEED,
 )
-from data import get_calibration_loader, get_test_loader, load_cifar10, load_or_build_calibration_indices
+from data import (
+    get_calibration_loader, get_test_loader,
+    load_cifar10, load_cifar10_train_augmented,
+    load_or_build_calibration_indices,
+)
 from model import build_block_registry, load_model
 from phase1_baseline import run_phase1
 from phase2_metrics import run_phase2
@@ -44,7 +48,7 @@ logger = logging.getLogger(__name__)
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="ResNet-50 Block Influence Pipeline")
     p.add_argument(
-        "--phase", choices=["1", "2", "3", "all"], default="all",
+        "--phase", choices=["1", "2", "3", "all"], default="None",
         help="Which phase(s) to run (default: all)"
     )
     p.add_argument(
@@ -62,6 +66,24 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--figures-only", action="store_true",
         help="Regenerate figures from cached results without re-running any phase"
+    )
+    p.add_argument(
+        "--phase4", action="store_true",
+        help="Run Phase 4: Weighted SP-KD distillation experiment (4 conditions × 3 seeds)"
+    )
+    p.add_argument(
+        "--phase4-epochs", type=int, default=None,
+        help="Override number of training epochs for Phase 4 (default: 200)"
+    )
+    p.add_argument(
+        "--phase4-gamma", type=float, default=None,
+        help="Override KD loss scale factor γ for Phase 4 (default: 3000)"
+    )
+    p.add_argument(
+        "--phase4-conditions", nargs="+",
+        choices=["vanilla", "uniform", "bi_acc", "bi_rep"],
+        default=None,
+        help="Run only specific Phase 4 conditions (default: all four)"
     )
     return p.parse_args()
 
@@ -119,6 +141,7 @@ def main() -> None:
     run_p1   = run_all or args.phase == "1"
     run_p2   = run_all or args.phase == "2"
     run_p3   = run_all or args.phase == "3"
+    run_p4   = args.phase4
 
     # ── Load shared assets (always needed) ────────────────────────
     logger.info("Loading CIFAR-10 …")
@@ -218,6 +241,44 @@ def main() -> None:
             device=device,
             phase2_results=p2_for_pruning,
         )
+
+    # ── Phase 4: Weighted SP-KD ───────────────────────────────
+    if run_p4:
+        from phase4_distillation import run_phase4
+        from config import PHASE4_RESULTS, PHASE4_N_EPOCHS, PHASE4_GAMMA_KD
+
+        logger.info("\n" + "═" * 60)
+        logger.info("PHASE 4: Weighted SP-KD Distillation")
+        logger.info("═" * 60)
+
+        # Resolve phase2 results (needed for stage weights)
+        if not PHASE2_RESULTS.exists():
+            raise FileNotFoundError(
+                "Phase 2 results not found. Run Phase 2 first (--phase 2)."
+            )
+        with open(PHASE2_RESULTS) as f:
+            p2_for_kd = json.load(f)
+
+        # Training dataset with augmentation (distinct from eval-transform train_ds)
+        train_ds_aug = load_cifar10_train_augmented()
+
+        p4_kwargs = dict(
+            teacher=model,
+            train_ds=train_ds_aug,
+            test_loader=test_loader,
+            calib_loader=calib_loader,
+            device=device,
+            phase2_results=p2_for_kd,
+        )
+        if args.phase4_epochs is not None:
+            p4_kwargs["n_epochs"] = args.phase4_epochs
+        if args.phase4_gamma is not None:
+            p4_kwargs["gamma"] = args.phase4_gamma
+        if args.phase4_conditions is not None:
+            p4_kwargs["conditions"] = args.phase4_conditions
+
+        p4_results = run_phase4(**p4_kwargs)
+        log_phase4(p4_results)
 
     # ── Figures ───────────────────────────────────────────────
     if run_p3 and not args.skip_figures:

@@ -79,3 +79,31 @@ ALPHA = 0.05
 # ── Multi-layer CKA extraction stages ───────────────────────────────────────
 # Used in the top-3 propagation profile (Step 2.3)
 MULTILAYER_STAGES = ["layer1", "layer2", "layer3", "layer4", "avgpool"]
+
+# ── Phase 4: Weighted SP-KD ──────────────────────────────────────────────────
+# Output paths
+PHASE4_RESULTS   = RESULTS_DIR / "phase4_results.json"
+PHASE4_CKPTS_DIR = CKPT_DIR / "phase4"
+
+# Training hyperparameters
+PHASE4_LR              = 0.1
+PHASE4_MOMENTUM        = 0.9
+PHASE4_WEIGHT_DECAY    = 5e-4
+PHASE4_N_EPOCHS        = 200
+PHASE4_BATCH_SIZE      = 128
+PHASE4_LR_MILESTONES   = [60, 120, 160]   # step-decay epochs
+PHASE4_LR_DECAY        = 0.1              # ×0.1 at each milestone
+PHASE4_GAMMA_KD        = 3000             # initial KD scale factor
+PHASE4_GRAD_CLIP       = 5.0             # gradient clip norm
+PHASE4_GRAD_CLIP_EPOCHS = 10             # apply clip for first N epochs
+PHASE4_WEIGHT_FLOOR    = 0.05            # min stage weight before normalisation
+PHASE4_SEEDS           = [42, 123, 456]
+PHASE4_CKA_INTERVAL    = 20             # compute CKA every N epochs
+
+# SP-KD layer matching: last Bottleneck of teacher stage ↔ last BasicBlock of student stage
+#   teacher layer1.2 ↔ student layer1.1
+#   teacher layer2.3 ↔ student layer2.1
+#   teacher layer3.5 ↔ student layer3.1
+#   teacher layer4.2 ↔ student layer4.1
+PHASE4_TEACHER_MATCH_IDX = {"layer1": 2, "layer2": 3, "layer3": 5, "layer4": 2}
+PHASE4_STUDENT_MATCH_IDX = {"layer1": 1, "layer2": 1, "layer3": 1, "layer4": 1}
