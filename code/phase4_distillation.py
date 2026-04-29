@@ -20,6 +20,7 @@ import json
 import logging
 import time
 from pathlib import Path
+from utils import relax_determinism_for_training
 
 import torch
 import torch.nn as nn
@@ -242,6 +243,7 @@ def check_spatial_dims(teacher: nn.Module, device: torch.device) -> None:
     for h in handles:
         h.remove()
     del student
+    torch.cuda.empty_cache()
 
     logger.info("SP-KD spatial dimension check:")
     for stage in STAGES:
@@ -347,11 +349,8 @@ def run_condition(
     logger.info(f"  [{condition}] seed={seed}")
 
     set_seed(seed)
-    # During training allow non-det CUDA ops (seeded init still gives reproducibility)
-    try:
-        torch.use_deterministic_algorithms(True, warn_only=True)
-    except TypeError:
-        pass  # warn_only added in PyTorch 1.11
+    relax_determinism_for_training()    
+    print(f"cudnn.deterministic={torch.backends.cudnn.deterministic}, benchmark={torch.backends.cudnn.benchmark}")
 
     student = build_student().to(device)
 
@@ -391,6 +390,7 @@ def run_condition(
 
     use_sp = (condition != "vanilla")
 
+
     for epoch in range(1, n_epochs + 1):
         t0 = time.time()
         student.train()
@@ -400,8 +400,9 @@ def run_condition(
             images, labels = images.to(device), labels.to(device)
 
             # Teacher forward — no gradient accumulation
-            with torch.no_grad():
-                teacher(images)
+            if use_sp:
+                with torch.no_grad():
+                    teacher(images)
 
             optimizer.zero_grad()
             logits = student(images)
@@ -434,7 +435,11 @@ def run_condition(
         epoch_time = time.time() - t0
         wall_times.append(epoch_time)
 
-        test_acc = _evaluate(student, test_loader, device)
+        if epoch % 5 == 0 or epoch == n_epochs:
+            #test_acc = _evaluate(student, test_loader, device)
+            test_acc = 0.0
+        else:
+            test_acc = acc_curve[-1] if acc_curve else 0.0  
         acc_curve.append(test_acc)
         ce_curve.append(sum_ce / n_batches)
         sp_curve.append(sum_sp / n_batches)
@@ -454,8 +459,8 @@ def run_condition(
                 f"acc={test_acc:.4f} | CE={ce_curve[-1]:.4f} | "
                 f"γ·SP={sp_curve[-1]:.4f} | {epoch_time:.1f}s"
             )
-
-    hook_mgr.remove()
+    if hook_mgr is not None:               
+        hook_mgr.remove()
 
     final_cka = cka_curve[-1][1] if cka_curve else None
     logger.info(
@@ -521,6 +526,7 @@ def run_phase4(
         weights=all_weights["uniform"], gamma=gamma,
     )
     del _tmp_student, _tmp_loader
+    torch.cuda.empty_cache()
 
     results: dict = {
         "metadata": {
