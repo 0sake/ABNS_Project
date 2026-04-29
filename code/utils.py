@@ -48,6 +48,19 @@ def set_seed(seed: int = 42) -> None:
 
     logger.info(f"Global seed set to {seed}. cuDNN deterministic=True, benchmark=False.")
 
+def relax_determinism_for_training() -> None:
+    """
+    Override cuDNN determinism settings for Phase 4 training.
+    set_seed() enforces deterministic=True / benchmark=False globally,
+    which causes 5-10x slowdown during training. Seed-based reproducibility
+    (random / numpy / torch / cuda) is preserved — only cuDNN convolution
+    algorithm selection is relaxed.
+    """
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
+    torch.use_deterministic_algorithms(False)
+    print("Override cuDNN determinism settings for Phase 4 training.")
+
 
 def worker_init_fn(worker_id: int) -> None:
     """Per-worker seed initialiser for DataLoader reproducibility."""
