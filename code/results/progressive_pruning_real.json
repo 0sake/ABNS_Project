@@ -1,0 +1,602 @@
+{
+  "strategy1": {
+    "order": [
+      "layer4.1",
+      "layer4.2",
+      "layer2.3",
+      "layer3.1",
+      "layer3.2",
+      "layer2.2",
+      "layer2.1",
+      "layer3.3",
+      "layer3.5",
+      "layer3.4",
+      "layer1.2",
+      "layer4.0",
+      "layer1.1",
+      "layer2.0",
+      "layer3.0",
+      "layer1.0"
+    ],
+    "real": {
+      "k1": {
+        "acc": 0.9417,
+        "BIrep": 0.0401,
+        "H_mean": 0.147045,
+        "conf_mean": 0.954188,
+        "H_Cl": 0.109952
+      },
+      "k2": {
+        "acc": 0.9292,
+        "BIrep": 0.102826,
+        "H_mean": 0.616027,
+        "conf_mean": 0.826859,
+        "H_Cl": 0.555921
+      },
+      "k3": {
+        "acc": 0.9173,
+        "BIrep": 0.131049,
+        "H_mean": 0.653975,
+        "conf_mean": 0.812763,
+        "H_Cl": 0.585769
+      },
+      "k4": {
+        "acc": 0.8927,
+        "BIrep": 0.177263,
+        "H_mean": 0.722698,
+        "conf_mean": 0.78568,
+        "H_Cl": 0.641331
+      },
+      "k5": {
+        "acc": 0.8467,
+        "BIrep": 0.247657,
+        "H_mean": 0.815549,
+        "conf_mean": 0.747571,
+        "H_Cl": 0.715834
+      },
+      "k6": {
+        "acc": 0.792,
+        "BIrep": 0.31369,
+        "H_mean": 0.913067,
+        "conf_mean": 0.708902,
+        "H_Cl": 0.790823
+      },
+      "k7": {
+        "acc": 0.7011,
+        "BIrep": 0.405064,
+        "H_mean": 1.057932,
+        "conf_mean": 0.653725,
+        "H_Cl": 0.916851
+      },
+      "k8": {
+        "acc": 0.5869,
+        "BIrep": 0.465482,
+        "H_mean": 1.047934,
+        "conf_mean": 0.647662,
+        "H_Cl": 0.898275
+      },
+      "k9": {
+        "acc": 0.5183,
+        "BIrep": 0.522872,
+        "H_mean": 1.053825,
+        "conf_mean": 0.642541,
+        "H_Cl": 0.920097
+      },
+      "k10": {
+        "acc": 0.4279,
+        "BIrep": 0.581931,
+        "H_mean": 0.934368,
+        "conf_mean": 0.67348,
+        "H_Cl": 0.804598
+      },
+      "k11": {
+        "acc": 0.4504,
+        "BIrep": 0.60228,
+        "H_mean": 0.997423,
+        "conf_mean": 0.65593,
+        "H_Cl": 0.876762
+      },
+      "k12": {
+        "acc": 0.3927,
+        "BIrep": 0.662208,
+        "H_mean": 1.811955,
+        "conf_mean": 0.359431,
+        "H_Cl": 1.739356
+      },
+      "k13": {
+        "acc": 0.2946,
+        "BIrep": 0.707525,
+        "H_mean": 1.786643,
+        "conf_mean": 0.370587,
+        "H_Cl": 1.730681
+      },
+      "k14": {
+        "acc": 0.2086,
+        "BIrep": 0.762961,
+        "H_mean": 1.248841,
+        "conf_mean": 0.563925,
+        "H_Cl": 1.056167
+      },
+      "k15": {
+        "acc": 0.1959,
+        "BIrep": 0.80625,
+        "H_mean": 1.481233,
+        "conf_mean": 0.485534,
+        "H_Cl": 1.366741
+      },
+      "k16": {
+        "acc": 0.1693,
+        "BIrep": 0.823356,
+        "H_mean": 0.918852,
+        "conf_mean": 0.692995,
+        "H_Cl": 0.830493
+      }
+    },
+    "simulated": {
+      "k1": {
+        "cumulative_biacc": 0.0047,
+        "cumulative_birep": 0.040104
+      },
+      "k2": {
+        "cumulative_biacc": 0.0107,
+        "cumulative_birep": 0.087354
+      },
+      "k3": {
+        "cumulative_biacc": 0.017,
+        "cumulative_birep": 0.100588
+      },
+      "k4": {
+        "cumulative_biacc": 0.027,
+        "cumulative_birep": 0.118978
+      },
+      "k5": {
+        "cumulative_biacc": 0.0373,
+        "cumulative_birep": 0.136415
+      },
+      "k6": {
+        "cumulative_biacc": 0.0487,
+        "cumulative_birep": 0.153872
+      },
+      "k7": {
+        "cumulative_biacc": 0.0615,
+        "cumulative_birep": 0.171546
+      },
+      "k8": {
+        "cumulative_biacc": 0.0758,
+        "cumulative_birep": 0.194532
+      },
+      "k9": {
+        "cumulative_biacc": 0.0943,
+        "cumulative_birep": 0.2373
+      },
+      "k10": {
+        "cumulative_biacc": 0.1129,
+        "cumulative_birep": 0.270933
+      },
+      "k11": {
+        "cumulative_biacc": 0.1471,
+        "cumulative_birep": 0.334863
+      },
+      "k12": {
+        "cumulative_biacc": 0.1844,
+        "cumulative_birep": 0.469837
+      },
+      "k13": {
+        "cumulative_biacc": 0.28,
+        "cumulative_birep": 0.606539
+      },
+      "k14": {
+        "cumulative_biacc": 0.4521,
+        "cumulative_birep": 0.835016
+      },
+      "k15": {
+        "cumulative_biacc": 0.714,
+        "cumulative_birep": 1.148515
+      },
+      "k16": {
+        "cumulative_biacc": 0.9934,
+        "cumulative_birep": 1.51474
+      }
+    }
+  },
+  "strategy3": {
+    "order": [
+      "layer2.3",
+      "layer3.2",
+      "layer2.2",
+      "layer2.1",
+      "layer3.1",
+      "layer3.3",
+      "layer3.4",
+      "layer4.1",
+      "layer3.5",
+      "layer4.2",
+      "layer1.2",
+      "layer4.0",
+      "layer1.1",
+      "layer2.0",
+      "layer3.0",
+      "layer1.0"
+    ],
+    "real": {
+      "k1": {
+        "acc": 0.9401,
+        "BIrep": 0.013237,
+        "H_mean": 0.057875,
+        "conf_mean": 0.978832,
+        "H_Cl": 0.035663
+      },
+      "k2": {
+        "acc": 0.925,
+        "BIrep": 0.039112,
+        "H_mean": 0.07142,
+        "conf_mean": 0.974034,
+        "H_Cl": 0.043616
+      },
+      "k3": {
+        "acc": 0.9011,
+        "BIrep": 0.079947,
+        "H_mean": 0.092487,
+        "conf_mean": 0.966148,
+        "H_Cl": 0.05668
+      },
+      "k4": {
+        "acc": 0.8486,
+        "BIrep": 0.15221,
+        "H_mean": 0.1346,
+        "conf_mean": 0.950248,
+        "H_Cl": 0.080648
+      },
+      "k5": {
+        "acc": 0.7621,
+        "BIrep": 0.26487,
+        "H_mean": 0.207153,
+        "conf_mean": 0.922674,
+        "H_Cl": 0.122526
+      },
+      "k6": {
+        "acc": 0.6434,
+        "BIrep": 0.373073,
+        "H_mean": 0.2605,
+        "conf_mean": 0.900491,
+        "H_Cl": 0.169387
+      },
+      "k7": {
+        "acc": 0.5636,
+        "BIrep": 0.457189,
+        "H_mean": 0.282292,
+        "conf_mean": 0.892555,
+        "H_Cl": 0.197889
+      },
+      "k8": {
+        "acc": 0.5483,
+        "BIrep": 0.472465,
+        "H_mean": 0.510952,
+        "conf_mean": 0.814424,
+        "H_Cl": 0.393162
+      },
+      "k9": {
+        "acc": 0.4832,
+        "BIrep": 0.525303,
+        "H_mean": 0.497723,
+        "conf_mean": 0.817869,
+        "H_Cl": 0.400551
+      },
+      "k10": {
+        "acc": 0.4279,
+        "BIrep": 0.581931,
+        "H_mean": 0.934368,
+        "conf_mean": 0.67348,
+        "H_Cl": 0.804598
+      },
+      "k11": {
+        "acc": 0.4504,
+        "BIrep": 0.60228,
+        "H_mean": 0.997423,
+        "conf_mean": 0.65593,
+        "H_Cl": 0.876762
+      },
+      "k12": {
+        "acc": 0.3927,
+        "BIrep": 0.662208,
+        "H_mean": 1.811955,
+        "conf_mean": 0.359431,
+        "H_Cl": 1.739356
+      },
+      "k13": {
+        "acc": 0.2946,
+        "BIrep": 0.707525,
+        "H_mean": 1.786643,
+        "conf_mean": 0.370587,
+        "H_Cl": 1.730681
+      },
+      "k14": {
+        "acc": 0.2086,
+        "BIrep": 0.762961,
+        "H_mean": 1.248841,
+        "conf_mean": 0.563925,
+        "H_Cl": 1.056167
+      },
+      "k15": {
+        "acc": 0.1959,
+        "BIrep": 0.80625,
+        "H_mean": 1.481233,
+        "conf_mean": 0.485534,
+        "H_Cl": 1.366741
+      },
+      "k16": {
+        "acc": 0.1693,
+        "BIrep": 0.823356,
+        "H_mean": 0.918852,
+        "conf_mean": 0.692995,
+        "H_Cl": 0.830493
+      }
+    },
+    "simulated": {
+      "k1": {
+        "cumulative_biacc": 0.0063,
+        "cumulative_birep": 0.013234
+      },
+      "k2": {
+        "cumulative_biacc": 0.0166,
+        "cumulative_birep": 0.030671
+      },
+      "k3": {
+        "cumulative_biacc": 0.028,
+        "cumulative_birep": 0.048128
+      },
+      "k4": {
+        "cumulative_biacc": 0.0408,
+        "cumulative_birep": 0.065802
+      },
+      "k5": {
+        "cumulative_biacc": 0.0508,
+        "cumulative_birep": 0.084192
+      },
+      "k6": {
+        "cumulative_biacc": 0.0651,
+        "cumulative_birep": 0.107178
+      },
+      "k7": {
+        "cumulative_biacc": 0.0837,
+        "cumulative_birep": 0.140811
+      },
+      "k8": {
+        "cumulative_biacc": 0.0884,
+        "cumulative_birep": 0.180915
+      },
+      "k9": {
+        "cumulative_biacc": 0.1069,
+        "cumulative_birep": 0.223683
+      },
+      "k10": {
+        "cumulative_biacc": 0.1129,
+        "cumulative_birep": 0.270933
+      },
+      "k11": {
+        "cumulative_biacc": 0.1471,
+        "cumulative_birep": 0.334863
+      },
+      "k12": {
+        "cumulative_biacc": 0.1844,
+        "cumulative_birep": 0.469837
+      },
+      "k13": {
+        "cumulative_biacc": 0.28,
+        "cumulative_birep": 0.606539
+      },
+      "k14": {
+        "cumulative_biacc": 0.4521,
+        "cumulative_birep": 0.835016
+      },
+      "k15": {
+        "cumulative_biacc": 0.714,
+        "cumulative_birep": 1.148515
+      },
+      "k16": {
+        "cumulative_biacc": 0.9934,
+        "cumulative_birep": 1.51474
+      }
+    }
+  },
+  "strategy_geo": {
+    "order": [
+      "layer4.2",
+      "layer4.1",
+      "layer3.2",
+      "layer2.3",
+      "layer2.2",
+      "layer3.3",
+      "layer3.1",
+      "layer3.4",
+      "layer2.1",
+      "layer3.5",
+      "layer1.2",
+      "layer4.0",
+      "layer1.1",
+      "layer2.0",
+      "layer1.0",
+      "layer3.0"
+    ],
+    "real": {
+      "k1": {
+        "acc": 0.9404,
+        "BIrep": 0.047267,
+        "H_mean": 0.241423,
+        "conf_mean": 0.928913,
+        "H_Cl": 0.19249
+      },
+      "k2": {
+        "acc": 0.9292,
+        "BIrep": 0.102826,
+        "H_mean": 0.616027,
+        "conf_mean": 0.826859,
+        "H_Cl": 0.555921
+      },
+      "k3": {
+        "acc": 0.9092,
+        "BIrep": 0.138901,
+        "H_mean": 0.666659,
+        "conf_mean": 0.80637,
+        "H_Cl": 0.595506
+      },
+      "k4": {
+        "acc": 0.8942,
+        "BIrep": 0.177171,
+        "H_mean": 0.709537,
+        "conf_mean": 0.789856,
+        "H_Cl": 0.630517
+      },
+      "k5": {
+        "acc": 0.8613,
+        "BIrep": 0.228974,
+        "H_mean": 0.793361,
+        "conf_mean": 0.75823,
+        "H_Cl": 0.698144
+      },
+      "k6": {
+        "acc": 0.7883,
+        "BIrep": 0.301018,
+        "H_mean": 0.865,
+        "conf_mean": 0.720597,
+        "H_Cl": 0.742799
+      },
+      "k7": {
+        "acc": 0.6895,
+        "BIrep": 0.382499,
+        "H_mean": 0.95577,
+        "conf_mean": 0.680452,
+        "H_Cl": 0.812452
+      },
+      "k8": {
+        "acc": 0.5796,
+        "BIrep": 0.45206,
+        "H_mean": 0.92564,
+        "conf_mean": 0.678357,
+        "H_Cl": 0.769513
+      },
+      "k9": {
+        "acc": 0.4893,
+        "BIrep": 0.528626,
+        "H_mean": 0.958021,
+        "conf_mean": 0.668928,
+        "H_Cl": 0.806418
+      },
+      "k10": {
+        "acc": 0.4279,
+        "BIrep": 0.581931,
+        "H_mean": 0.934368,
+        "conf_mean": 0.67348,
+        "H_Cl": 0.804598
+      },
+      "k11": {
+        "acc": 0.4504,
+        "BIrep": 0.60228,
+        "H_mean": 0.997423,
+        "conf_mean": 0.65593,
+        "H_Cl": 0.876762
+      },
+      "k12": {
+        "acc": 0.3927,
+        "BIrep": 0.662208,
+        "H_mean": 1.811955,
+        "conf_mean": 0.359431,
+        "H_Cl": 1.739356
+      },
+      "k13": {
+        "acc": 0.2946,
+        "BIrep": 0.707525,
+        "H_mean": 1.786643,
+        "conf_mean": 0.370587,
+        "H_Cl": 1.730681
+      },
+      "k14": {
+        "acc": 0.2086,
+        "BIrep": 0.762961,
+        "H_mean": 1.248841,
+        "conf_mean": 0.563925,
+        "H_Cl": 1.056167
+      },
+      "k15": {
+        "acc": 0.1781,
+        "BIrep": 0.813579,
+        "H_mean": 0.782637,
+        "conf_mean": 0.730667,
+        "H_Cl": 0.631446
+      },
+      "k16": {
+        "acc": 0.1693,
+        "BIrep": 0.823356,
+        "H_mean": 0.918852,
+        "conf_mean": 0.692995,
+        "H_Cl": 0.830493
+      }
+    },
+    "simulated": {
+      "k1": {
+        "cumulative_biacc": 0.006,
+        "cumulative_birep": 0.04725
+      },
+      "k2": {
+        "cumulative_biacc": 0.0107,
+        "cumulative_birep": 0.087354
+      },
+      "k3": {
+        "cumulative_biacc": 0.021,
+        "cumulative_birep": 0.104791
+      },
+      "k4": {
+        "cumulative_biacc": 0.0273,
+        "cumulative_birep": 0.118025
+      },
+      "k5": {
+        "cumulative_biacc": 0.0387,
+        "cumulative_birep": 0.135482
+      },
+      "k6": {
+        "cumulative_biacc": 0.053,
+        "cumulative_birep": 0.158468
+      },
+      "k7": {
+        "cumulative_biacc": 0.063,
+        "cumulative_birep": 0.176858
+      },
+      "k8": {
+        "cumulative_biacc": 0.0816,
+        "cumulative_birep": 0.210491
+      },
+      "k9": {
+        "cumulative_biacc": 0.0944,
+        "cumulative_birep": 0.228165
+      },
+      "k10": {
+        "cumulative_biacc": 0.1129,
+        "cumulative_birep": 0.270933
+      },
+      "k11": {
+        "cumulative_biacc": 0.1471,
+        "cumulative_birep": 0.334863
+      },
+      "k12": {
+        "cumulative_biacc": 0.1844,
+        "cumulative_birep": 0.469837
+      },
+      "k13": {
+        "cumulative_biacc": 0.28,
+        "cumulative_birep": 0.606539
+      },
+      "k14": {
+        "cumulative_biacc": 0.4521,
+        "cumulative_birep": 0.835016
+      },
+      "k15": {
+        "cumulative_biacc": 0.7315,
+        "cumulative_birep": 1.201241
+      },
+      "k16": {
+        "cumulative_biacc": 0.9934,
+        "cumulative_birep": 1.51474
+      }
+    }
+  }
+}
