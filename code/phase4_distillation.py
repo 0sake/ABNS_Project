@@ -30,7 +30,7 @@ from config import (
     CIFAR10_MEAN, CIFAR10_STD, NUM_WORKERS,
     PHASE2_RESULTS, PHASE4_RESULTS, PHASE4_CKPTS_DIR,
     PHASE4_LR, PHASE4_MOMENTUM, PHASE4_WEIGHT_DECAY,
-    PHASE4_N_EPOCHS, PHASE4_BATCH_SIZE,
+    PHASE4_N_EPOCHS, PHASE4_BATCH_SIZE, CKPT_DIR,
     PHASE4_LR_MILESTONES, PHASE4_LR_DECAY,
     PHASE4_GAMMA_KD, PHASE4_GRAD_CLIP, PHASE4_GRAD_CLIP_EPOCHS,
     PHASE4_WEIGHT_FLOOR, PHASE4_SEEDS, PHASE4_CKA_INTERVAL,
@@ -436,8 +436,7 @@ def run_condition(
         wall_times.append(epoch_time)
 
         if epoch % 5 == 0 or epoch == n_epochs:
-            #test_acc = _evaluate(student, test_loader, device)
-            test_acc = 0.0
+            test_acc = _evaluate(student, test_loader, device)
         else:
             test_acc = acc_curve[-1] if acc_curve else 0.0  
         acc_curve.append(test_acc)
@@ -476,6 +475,7 @@ def run_condition(
         "sp_loss_curve": sp_curve,
         "cka_curve": cka_curve,
         "epoch_wall_times": wall_times,
+        "student_state_dict": student.state_dict(),
     }
 
 
@@ -568,7 +568,14 @@ def run_phase4(
                 n_epochs=n_epochs,
                 gamma=gamma,
             )
-            results["conditions"][cond][f"seed_{seed}"] = run_res
+            
+
+        # Salva pesi modello
+        ckpt_dir = CKPT_DIR / cond
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(run_res.pop("student_state_dict"), ckpt_dir / f"student_seed_{seed}.pt")
+
+        results["conditions"][cond][f"seed_{seed}"] = run_res
 
         # Checkpoint after each condition so partial results survive interruptions
         with open(PHASE4_RESULTS, "w") as f:
