@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--phase4-seeds", nargs="+",
-        choices=["42,123,456"],
+        choices=["42","123","456"],
         default=None,
         help="Run only specific Phase 4 conditions (default: all four)"
     )
