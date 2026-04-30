@@ -501,7 +501,7 @@ def run_phase4(
         with open(PHASE2_RESULTS) as f:
             phase2_results = json.load(f)
 
-    seeds = seeds or PHASE4_SEEDS
+    seeds = int(seeds) or PHASE4_SEEDS
     conditions = conditions or ["vanilla", "uniform", "bi_acc", "bi_rep"]
 
     PHASE4_CKPTS_DIR.mkdir(parents=True, exist_ok=True)
