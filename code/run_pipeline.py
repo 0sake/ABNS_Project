@@ -85,6 +85,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Run only specific Phase 4 conditions (default: all four)"
     )
+    p.add_argument(
+        "--phase4-seeds", nargs="+",
+        choices=["42,123,456"],
+        default=None,
+        help="Run only specific Phase 4 conditions (default: all four)"
+    )
     return p.parse_args()
 
 
@@ -276,6 +282,8 @@ def main() -> None:
             p4_kwargs["gamma"] = args.phase4_gamma
         if args.phase4_conditions is not None:
             p4_kwargs["conditions"] = args.phase4_conditions
+        if args.phase4_seeds is not None:
+            p4_kwargs["seeds"] = args.phase4_seeds
 
         p4_results = run_phase4(**p4_kwargs)
         log_phase4(p4_results)
