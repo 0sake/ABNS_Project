@@ -501,7 +501,7 @@ def run_phase4(
         with open(PHASE2_RESULTS) as f:
             phase2_results = json.load(f)
 
-    seeds = int(seeds) or PHASE4_SEEDS
+    seeds = seeds or PHASE4_SEEDS
     conditions = conditions or ["vanilla", "uniform", "bi_acc", "bi_rep"]
 
     PHASE4_CKPTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -564,7 +564,7 @@ def run_phase4(
                 test_loader=test_loader,
                 calib_loader=calib_loader,
                 device=device,
-                seed=seed,
+                seed=int(seed),
                 n_epochs=n_epochs,
                 gamma=gamma,
             )
