@@ -1,0 +1,102 @@
+{
+  "3": {
+    "bi_geo_vs_bi_acc": {
+      "jaccard": 1.0,
+      "intersection": [
+        "layer1.0",
+        "layer2.0",
+        "layer3.0"
+      ],
+      "union": [
+        "layer1.0",
+        "layer2.0",
+        "layer3.0"
+      ],
+      "k": 3
+    },
+    "bi_geo_vs_bi_rep": {
+      "jaccard": 1.0,
+      "intersection": [
+        "layer1.0",
+        "layer2.0",
+        "layer3.0"
+      ],
+      "union": [
+        "layer1.0",
+        "layer2.0",
+        "layer3.0"
+      ],
+      "k": 3
+    },
+    "bi_acc_vs_bi_rep": {
+      "jaccard": 1.0,
+      "intersection": [
+        "layer1.0",
+        "layer2.0",
+        "layer3.0"
+      ],
+      "union": [
+        "layer1.0",
+        "layer2.0",
+        "layer3.0"
+      ],
+      "k": 3
+    }
+  },
+  "5": {
+    "bi_geo_vs_bi_acc": {
+      "jaccard": 1.0,
+      "intersection": [
+        "layer1.0",
+        "layer1.1",
+        "layer2.0",
+        "layer3.0",
+        "layer4.0"
+      ],
+      "union": [
+        "layer1.0",
+        "layer1.1",
+        "layer2.0",
+        "layer3.0",
+        "layer4.0"
+      ],
+      "k": 5
+    },
+    "bi_geo_vs_bi_rep": {
+      "jaccard": 1.0,
+      "intersection": [
+        "layer1.0",
+        "layer1.1",
+        "layer2.0",
+        "layer3.0",
+        "layer4.0"
+      ],
+      "union": [
+        "layer1.0",
+        "layer1.1",
+        "layer2.0",
+        "layer3.0",
+        "layer4.0"
+      ],
+      "k": 5
+    },
+    "bi_acc_vs_bi_rep": {
+      "jaccard": 1.0,
+      "intersection": [
+        "layer1.0",
+        "layer1.1",
+        "layer2.0",
+        "layer3.0",
+        "layer4.0"
+      ],
+      "union": [
+        "layer1.0",
+        "layer1.1",
+        "layer2.0",
+        "layer3.0",
+        "layer4.0"
+      ],
+      "k": 5
+    }
+  }
+}
