@@ -10,3 +10,5 @@ __pycache__/
 mlruns/
 *.md
 *.db
+phase4_results/
+notes/

@@ -82,8 +82,10 @@ MULTILAYER_STAGES = ["layer1", "layer2", "layer3", "layer4", "avgpool"]
 
 # ── Phase 4: Weighted SP-KD ──────────────────────────────────────────────────
 # Output paths
-PHASE4_RESULTS   = RESULTS_DIR / "phase4_results.json"
-PHASE4_CKPTS_DIR = CKPT_DIR / "phase4"
+PHASE4_RESULTS      = RESULTS_DIR / "phase4_results.json"
+PHASE4_CKPTS_DIR    = CKPT_DIR / "phase4"
+PHASE4_DIR          = ROOT.parent / "phase4_results"
+PHASE4_FINE_ANALYSIS = PHASE4_DIR / "phase4_fine_analysis.json"
 
 # Training hyperparameters
 PHASE4_LR              = 0.1
