@@ -586,8 +586,8 @@ def run_cifar10c_eval(
     run_p = dataset in ("p", "both")
 
     # ── 1. Download only the needed dataset(s) ───────────────────────────────────
-    cifar10c_dir = data_path / "CIFAR-10-C"
-    cifar10p_dir = data_path / "CIFAR-10-P"
+    cifar10c_dir = data_path 
+    cifar10p_dir = data_path 
     if run_c:
         _ensure_dataset(CIFAR10C_URL, cifar10c_dir, skip_download)
     if run_p:
