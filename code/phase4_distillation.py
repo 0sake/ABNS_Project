@@ -522,6 +522,17 @@ def run_condition(
         sp_curve.append(sum_sp / n_batches)
         kd_curve.append(sum_kd / n_batches)
 
+        # Adaptive γ: if SP dominates at epoch 10, halve until it doesn't
+        if epoch == 10 and use_sp:
+            total_loss = ce_curve[-1] + sp_curve[-1] + kd_curve[-1]
+            sp_frac = sp_curve[-1] / (total_loss + 1e-8)
+            while sp_frac > 0.80:
+                gamma *= 0.5
+                sp_frac *= 0.5
+            logger.info(
+                f"    γ check @ epoch 10: SP={sp_frac*100:.1f}% of total → γ={'unchanged' if gamma == PHASE4_GAMMA_KD else f'adjusted to {gamma:.0f}'}"
+            )
+
         if epoch % PHASE4_CKA_INTERVAL == 0 or epoch == n_epochs:
             cka_val = compute_transfer_cka(student, teacher, calib_loader, device)
             cka_curve.append((epoch, cka_val))
