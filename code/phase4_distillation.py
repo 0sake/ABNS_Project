@@ -99,6 +99,8 @@ def build_condition_weights(phase2_results: dict) -> dict[str, dict[str, float]]
         "bi_acc":      compute_stage_weights(bi_acc),
         "bi_rep":      compute_stage_weights(bi_rep),
         "conf_gated":  compute_stage_weights(delta),
+        "gated_only":  compute_stage_weights(delta),
+        "delta_kd":    compute_stage_weights(delta),
     }
 
 
@@ -453,6 +455,8 @@ def run_condition(
 
     use_sp = (condition not in ("vanilla",))
     use_conf_gated = (condition == "conf_gated")
+    use_gated_only = (condition == "gated_only")     # gating + delta weights, NO KD-soft
+    use_delta_kd   = (condition == "delta_kd")        # delta weights + KD-soft, NO gating
 
 
     for epoch in range(1, n_epochs + 1):
@@ -473,7 +477,7 @@ def run_condition(
 
             loss_ce = criterion(logits, labels)
 
-            if use_conf_gated:
+            if use_conf_gated or use_gated_only:
                 teacher_probs = F.softmax(teacher_logits, dim=1)
                 loss_sp = conf_gated_sp_loss(
                     hook_mgr.teacher_feats,
@@ -481,6 +485,18 @@ def run_condition(
                     weights,
                     teacher_probs,
                     labels,
+                )
+                if use_conf_gated:
+                    loss_kd = kd_soft_loss(logits, teacher_logits)
+                    loss = loss_ce + PHASE4_BETA_KD_SOFT * loss_kd + gamma * loss_sp
+                else:
+                    loss_kd = torch.zeros(1, device=device)
+                    loss = loss_ce + gamma * loss_sp
+            elif use_delta_kd:
+                loss_sp = sp_kd_loss(
+                    hook_mgr.teacher_feats,
+                    hook_mgr.student_feats,
+                    weights,
                 )
                 loss_kd = kd_soft_loss(logits, teacher_logits)
                 loss = loss_ce + PHASE4_BETA_KD_SOFT * loss_kd + gamma * loss_sp
@@ -506,7 +522,7 @@ def run_condition(
 
             sum_ce += loss_ce.item()
             sum_sp += (gamma * loss_sp).item()
-            sum_kd += (PHASE4_BETA_KD_SOFT * loss_kd).item() if use_conf_gated else 0.0
+            sum_kd += (PHASE4_BETA_KD_SOFT * loss_kd).item() if (use_conf_gated or use_delta_kd) else 0.0
             n_batches += 1
 
         scheduler.step()
