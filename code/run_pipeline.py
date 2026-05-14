@@ -81,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--phase4-conditions", nargs="+",
-        choices=["vanilla", "uniform", "bi_acc", "bi_rep", "conf_gated"],
+        choices=["vanilla", "uniform", "bi_acc", "bi_rep", "conf_gated", "gated_only", "delta_kd"],
         default=None,
         help="Run only specific Phase 4 conditions (default: all four)"
     )
