@@ -109,3 +109,7 @@ PHASE4_CKA_INTERVAL    = 20             # compute CKA every N epochs
 #   teacher layer4.2 ↔ student layer4.1
 PHASE4_TEACHER_MATCH_IDX = {"layer1": 2, "layer2": 3, "layer3": 5, "layer4": 2}
 PHASE4_STUDENT_MATCH_IDX = {"layer1": 1, "layer2": 1, "layer3": 1, "layer4": 1}
+
+
+PHASE4_KD_SOFT_TEMP     = 4.0    # temperatura Hinton KD
+PHASE4_BETA_KD_SOFT     = 1.0    # peso del termine KD-soft

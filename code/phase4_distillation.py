@@ -1,17 +1,24 @@
 """
 phase4_distillation.py — Phase 4: Weighted Similarity-Preserving KD.
 
-Four training conditions (teacher = ResNet-50 intact, student = ResNet-18):
-  vanilla   — cross-entropy only (student baseline, no KD)
-  uniform   — SP-KD, equal stage weights (1/4 per stage)
-  bi_acc    — SP-KD, stage weights ∝ mean BIacc per stage (from phase2)
-  bi_rep    — SP-KD, stage weights ∝ mean BIrep per stage (from phase2)
+Five training conditions (teacher = ResNet-50 intact, student = ResNet-18):
+  vanilla     — cross-entropy only (student baseline, no KD)
+  uniform     — SP-KD, equal stage weights (1/4 per stage)
+  bi_acc      — SP-KD, stage weights ∝ mean BIacc per stage (from phase2)
+  bi_rep      — SP-KD, stage weights ∝ mean BIrep per stage (from phase2)
+  conf_gated  — confidence-gated SP-KD (Δ-weighted) + KD-soft:
+                 SP loss per-sample gated by p_teacher(y_true|x_i),
+                 stage weights ∝ Δ = BIrep − BIacc,
+                 plus standard Hinton soft-label KD on logits.
 
 SP-KD loss (Tung & Mori, 2019): for each matched stage l,
   G[i,j] = f_i · f_j / (||f_i|| ||f_j||)   (N×N normalised Gram matrix)
   L_SP = Σ_l  w_l · ||G_T_l − G_S_l||_F² / N²
 
-Total loss: L = L_CE + γ · L_SP
+Total loss:
+  vanilla:    L = L_CE
+  others:     L = L_CE + γ · L_SP
+  conf_gated: L = L_CE + β · L_KD_soft + γ · L_SP_gated
 
 Output: results/phase4_results.json
 """
@@ -24,6 +31,7 @@ from utils import relax_determinism_for_training
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from config import (
@@ -35,6 +43,7 @@ from config import (
     PHASE4_GAMMA_KD, PHASE4_GRAD_CLIP, PHASE4_GRAD_CLIP_EPOCHS,
     PHASE4_WEIGHT_FLOOR, PHASE4_SEEDS, PHASE4_CKA_INTERVAL,
     PHASE4_TEACHER_MATCH_IDX, PHASE4_STUDENT_MATCH_IDX,
+    PHASE4_KD_SOFT_TEMP, PHASE4_BETA_KD_SOFT,
 )
 from model import ResNet50_CIFAR
 from student_model import ResNet18_CIFAR, build_student
@@ -77,14 +86,19 @@ def compute_stage_weights(metric_dict: dict, floor: float = PHASE4_WEIGHT_FLOOR)
 
 def build_condition_weights(phase2_results: dict) -> dict[str, dict[str, float]]:
     """
-    Return stage-weight dicts for all four conditions.
-    Keys: 'vanilla', 'uniform', 'bi_acc', 'bi_rep'
+    Return stage-weight dicts for all conditions.
+    'conf_gated' uses Δ = BIrep - BIacc per block, then stage-averaged & normalised.
     """
+    bi_acc = phase2_results["bi_acc"]
+    bi_rep = phase2_results["bi_rep"]
+    delta = {b: max(bi_rep.get(b, 0) - bi_acc.get(b, 0), 0.0) for b in bi_rep}
+
     return {
-        "vanilla": {s: 0.0 for s in STAGES},
-        "uniform": {s: 1.0 / len(STAGES) for s in STAGES},
-        "bi_acc":  compute_stage_weights(phase2_results["bi_acc"]),
-        "bi_rep":  compute_stage_weights(phase2_results["bi_rep"]),
+        "vanilla":     {s: 0.0 for s in STAGES},
+        "uniform":     {s: 1.0 / len(STAGES) for s in STAGES},
+        "bi_acc":      compute_stage_weights(bi_acc),
+        "bi_rep":      compute_stage_weights(bi_rep),
+        "conf_gated":  compute_stage_weights(delta),
     }
 
 
@@ -126,6 +140,54 @@ def sp_kd_loss(
         G_S = gram_matrix(student_feats[stage])   # (N,N) with grad
         diff = G_T - G_S
         loss = loss + w * (diff * diff).sum() / (N * N)
+
+    return loss
+
+
+def kd_soft_loss(
+    student_logits: torch.Tensor,
+    teacher_logits: torch.Tensor,
+    T: float = PHASE4_KD_SOFT_TEMP,
+) -> torch.Tensor:
+    """
+    Standard Hinton KD loss: KL(softmax(s/T) || softmax(t/T)) · T².
+    Returns scalar; multiply by beta externally.
+    """
+    p_t = F.softmax(teacher_logits / T, dim=1)
+    log_p_s = F.log_softmax(student_logits / T, dim=1)
+    return (T * T) * F.kl_div(log_p_s, p_t, reduction="batchmean")
+
+
+def conf_gated_sp_loss(
+    teacher_feats: dict[str, torch.Tensor],
+    student_feats: dict[str, torch.Tensor],
+    weights: dict[str, float],
+    teacher_probs: torch.Tensor,
+    labels: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Confidence-gated SP-KD: per-sample weight = p_teacher(y_true | x_i).
+
+    Gram matrix entries (i,j) are weighted by (w_i + w_j) / 2, so pairs
+    involving unreliable teacher predictions are down-weighted.
+    """
+    device = next(iter(student_feats.values())).device
+    loss = torch.zeros(1, device=device)
+    N = next(iter(student_feats.values())).size(0)
+
+    # Per-sample confidence gate: probability teacher assigns to ground truth
+    w_i = teacher_probs.gather(1, labels.unsqueeze(1)).squeeze(1)  # (N,)
+    # Pairwise weight matrix: mean of the two sample weights
+    W = (w_i.unsqueeze(1) + w_i.unsqueeze(0)) / 2  # (N, N)
+
+    for stage in STAGES:
+        w = weights.get(stage, 0.0)
+        if w == 0.0:
+            continue
+        G_T = gram_matrix(teacher_feats[stage])
+        G_S = gram_matrix(student_feats[stage])
+        diff = G_T - G_S
+        loss = loss + w * (W * diff * diff).sum() / (N * N)
 
     return loss
 
@@ -385,16 +447,18 @@ def run_condition(
     acc_curve: list[float] = []
     ce_curve: list[float] = []
     sp_curve: list[float] = []
+    kd_curve: list[float] = []
     cka_curve: list[tuple[int, float]] = []   # (epoch, cka_value)
     wall_times: list[float] = []
 
-    use_sp = (condition != "vanilla")
+    use_sp = (condition not in ("vanilla",))
+    use_conf_gated = (condition == "conf_gated")
 
 
     for epoch in range(1, n_epochs + 1):
         t0 = time.time()
         student.train()
-        sum_ce = sum_sp = n_batches = 0
+        sum_ce = sum_sp = sum_kd = n_batches = 0
 
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
@@ -402,22 +466,35 @@ def run_condition(
             # Teacher forward — no gradient accumulation
             if use_sp:
                 with torch.no_grad():
-                    teacher(images)
+                    teacher_logits = teacher(images)
 
             optimizer.zero_grad()
             logits = student(images)
 
             loss_ce = criterion(logits, labels)
 
-            if use_sp:
+            if use_conf_gated:
+                teacher_probs = F.softmax(teacher_logits, dim=1)
+                loss_sp = conf_gated_sp_loss(
+                    hook_mgr.teacher_feats,
+                    hook_mgr.student_feats,
+                    weights,
+                    teacher_probs,
+                    labels,
+                )
+                loss_kd = kd_soft_loss(logits, teacher_logits)
+                loss = loss_ce + PHASE4_BETA_KD_SOFT * loss_kd + gamma * loss_sp
+            elif use_sp:
                 loss_sp = sp_kd_loss(
                     hook_mgr.teacher_feats,
                     hook_mgr.student_feats,
                     weights,
                 )
+                loss_kd = torch.zeros(1, device=device)
                 loss = loss_ce + gamma * loss_sp
             else:
                 loss_sp = torch.zeros(1, device=device)
+                loss_kd = torch.zeros(1, device=device)
                 loss = loss_ce
 
             loss.backward()
@@ -429,6 +506,7 @@ def run_condition(
 
             sum_ce += loss_ce.item()
             sum_sp += (gamma * loss_sp).item()
+            sum_kd += (PHASE4_BETA_KD_SOFT * loss_kd).item() if use_conf_gated else 0.0
             n_batches += 1
 
         scheduler.step()
@@ -442,6 +520,7 @@ def run_condition(
         acc_curve.append(test_acc)
         ce_curve.append(sum_ce / n_batches)
         sp_curve.append(sum_sp / n_batches)
+        kd_curve.append(sum_kd / n_batches)
 
         if epoch % PHASE4_CKA_INTERVAL == 0 or epoch == n_epochs:
             cka_val = compute_transfer_cka(student, teacher, calib_loader, device)
@@ -449,14 +528,15 @@ def run_condition(
             logger.info(
                 f"    epoch {epoch:3d}/{n_epochs} | "
                 f"acc={test_acc:.4f} | CE={ce_curve[-1]:.4f} | "
-                f"γ·SP={sp_curve[-1]:.4f} | CKA={cka_val:.4f} | "
-                f"{epoch_time:.1f}s"
+                f"γ·SP={sp_curve[-1]:.4f} | β·KD={kd_curve[-1]:.4f} | "
+                f"CKA={cka_val:.4f} | {epoch_time:.1f}s"
             )
         else:
             logger.info(
                 f"    epoch {epoch:3d}/{n_epochs} | "
                 f"acc={test_acc:.4f} | CE={ce_curve[-1]:.4f} | "
-                f"γ·SP={sp_curve[-1]:.4f} | {epoch_time:.1f}s"
+                f"γ·SP={sp_curve[-1]:.4f} | β·KD={kd_curve[-1]:.4f} | "
+                f"{epoch_time:.1f}s"
             )
     if hook_mgr is not None:               
         hook_mgr.remove()
@@ -473,6 +553,7 @@ def run_condition(
         "accuracy_curve": acc_curve,
         "ce_loss_curve": ce_curve,
         "sp_loss_curve": sp_curve,
+        "kd_loss_curve": kd_curve,
         "cka_curve": cka_curve,
         "epoch_wall_times": wall_times,
         "student_state_dict": student.state_dict(),
@@ -502,13 +583,13 @@ def run_phase4(
             phase2_results = json.load(f)
 
     seeds = seeds or PHASE4_SEEDS
-    conditions = conditions or ["vanilla", "uniform", "bi_acc", "bi_rep"]
+    conditions = conditions or ["vanilla", "uniform", "bi_acc", "bi_rep", "conf_gated"]
 
     PHASE4_CKPTS_DIR.mkdir(parents=True, exist_ok=True)
 
     all_weights = build_condition_weights(phase2_results)
 
-    for cond in ["bi_acc", "bi_rep"]:
+    for cond in ["bi_acc", "bi_rep", "conf_gated"]:
         logger.info(f"Stage weights [{cond}]: {all_weights[cond]}")
 
     # Spatial dimension verification (informational)
@@ -544,6 +625,7 @@ def run_phase4(
             "bi_acc": all_weights["bi_acc"],
             "bi_rep": all_weights["bi_rep"],
             "uniform": all_weights["uniform"],
+            "conf_gated": all_weights["conf_gated"],
         },
         "conditions": {},
     }
