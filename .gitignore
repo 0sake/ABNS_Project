@@ -8,8 +8,13 @@ __pycache__/
 *.pth
 #*.pt
 mlruns/
-*.md
 *.db
 phase4_results/
 notes/
 *:Zone.Identifier
+
+# Local working notes (kept out of the repo)
+/PLAN_per_class_cka.md
+/prompt.md
+/report.md
+.serena/
