@@ -11,6 +11,8 @@ mlruns/
 *.db
 phase4_results/
 notes/
+.vscode/
+submissions/report/
 *:Zone.Identifier
 
 # Local working notes (kept out of the repo)
