@@ -49,7 +49,7 @@ Final CIFAR-10 test accuracy of the ResNet-50 teacher and of the ResNet-18 stude
 assets/               figures shown in this README
 code/                 pipeline (entry point: run_pipeline.py)
 code/results/         cached outputs of Phases 1–3 and progressive pruning
-models/teacher/       teacher weights (edadaltocg/resnet50_cifar10) and notebooks
+models/teacher/       notebooks that download the teacher (edadaltocg/resnet50_cifar10) and evaluate it
 submissions/          Colab version of the pipeline
 ```
 
@@ -59,11 +59,10 @@ Requires Python ≥ 3.10 (the cached results were produced with Python 3.13).
 
 ```bash
 pip install -r requirements.txt
-mkdir -p code/checkpoints
-cp models/teacher/modello_edadaltocg/pytorch_model.bin code/checkpoints/
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download('edadaltocg/resnet50_cifar10', 'pytorch_model.bin', local_dir='code/checkpoints')"
 ```
 
-CIFAR-10 is downloaded automatically through torchvision into `./data` (i.e. `code/data/` when run from `code/`).
+The second command downloads the pretrained teacher from Hugging Face ([edadaltocg/resnet50_cifar10](https://huggingface.co/edadaltocg/resnet50_cifar10)) to `code/checkpoints/pytorch_model.bin`, where `config.py` expects it. CIFAR-10 is downloaded automatically through torchvision into `./data` (i.e. `code/data/` when run from `code/`).
 
 ## Usage
 
