@@ -12,3 +12,4 @@ mlruns/
 *.db
 phase4_results/
 notes/
+*:Zone.Identifier
