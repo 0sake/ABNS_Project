@@ -29,9 +29,24 @@ The project measures how much each of the 16 Bottleneck blocks of a CIFAR-10 Res
 
 Pipeline settings (paths, seeds, thresholds, Phase 4 hyperparameters) are in `code/config.py`. Runs are logged with MLflow under the experiment `block-influence-resnet50-cifar10`.
 
+## Figures
+
+![Block Influence scores per block](assets/fig2_grouped_bar.png)
+
+BIgeo, BIacc and BIrep for each of the 16 blocks, sorted by BIacc (`visualisation.py`, Fig 2).
+
+![Final test accuracy of teacher and students](assets/final_accuracy.png)
+
+Final CIFAR-10 test accuracy of the ResNet-50 teacher and of the ResNet-18 students per Phase 4 condition, one marker per seed plus the mean over seeds (`final_visualizations.py`).
+
+![UMAP of the bi_rep student's features](assets/birep_umap.png)
+
+2-D UMAP of the avgpool features of the `bi_rep` ResNet-18 student (seed 42) on the CIFAR-10 test set, coloured by class (`embedding_visualization.py`).
+
 ## Repository layout
 
 ```
+assets/               figures shown in this README
 code/                 pipeline (entry point: run_pipeline.py)
 code/results/         cached outputs of Phases 1–3 and progressive pruning
 models/teacher/       teacher weights (edadaltocg/resnet50_cifar10) and notebooks
