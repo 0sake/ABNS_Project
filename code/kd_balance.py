@@ -232,9 +232,33 @@ def _git_commit() -> str | None:
 
 # ── Data on the GPU ───────────────────────────────────────────────────────────
 
+def _use_kaggle_cifar(data_dir: Path, inputs: Path = Path("/kaggle/input")) -> None:
+    """
+    Point data_dir at a CIFAR-10 (python version) dataset attached under /kaggle/input,
+    because downloading it from cs.toronto.edu can take hours. Accepts the extracted
+    batch folder (linked) or cifar-10-python.tar.gz (copied, then extracted by torchvision).
+    """
+    if (data_dir / "cifar-10-batches-py").exists() or not inputs.is_dir():
+        return
+    depths = ["/".join(["*"] * d) for d in range(1, 6)]
+    batches = [p.parent for d in depths for p in inputs.glob(f"{d}/data_batch_1")
+               if (p.parent / "test_batch").exists()]
+    archives = [p for d in depths for p in inputs.glob(f"{d}/cifar-10-python.tar.gz")]
+    if batches:
+        (data_dir / "cifar-10-batches-py").symlink_to(batches[0], target_is_directory=True)
+        logger.info(f"CIFAR-10 from attached dataset {batches[0]}")
+    elif archives:
+        shutil.copy(archives[0], data_dir / archives[0].name)
+        logger.info(f"CIFAR-10 archive from attached dataset {archives[0]}")
+    else:
+        logger.warning("no CIFAR-10 dataset attached under /kaggle/input — downloading from "
+                       "cs.toronto.edu, which can be very slow")
+
+
 def prepare_assets(data_dir: Path, teacher_ckpt: Path) -> None:
     """Download CIFAR-10 and the teacher if missing. Call once before launching parallel runs."""
     data_dir.mkdir(parents=True, exist_ok=True)
+    _use_kaggle_cifar(data_dir)
     datasets.CIFAR10(str(data_dir), train=True, download=True)
     datasets.CIFAR10(str(data_dir), train=False, download=True)
     if not teacher_ckpt.exists():
