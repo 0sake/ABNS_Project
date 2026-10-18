@@ -10,6 +10,7 @@ __pycache__/
 mlruns/
 *.db
 phase4_results/
+kd_balance_results/
 notes/
 .vscode/
 submissions/report/
